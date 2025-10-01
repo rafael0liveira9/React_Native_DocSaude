@@ -20,7 +20,7 @@ interface PersonalCardModalProps {
 
 const { width, height } = Dimensions.get("window");
 
-export function PersonalCardModal({
+export default function PersonalCardModal({
   visible,
   user,
   themeColors,
@@ -67,7 +67,7 @@ export function PersonalCardModal({
                 ]}
               >
                 <Text style={[stylesInside.cardPreviewText, { fontSize: 32 }]}>
-                  {user.name}
+                  {user?.name}
                 </Text>
                 <View style={[globalStyles.flexr, { gap: 40 }]}>
                   <View
@@ -82,7 +82,7 @@ export function PersonalCardModal({
                   >
                     <Text>NASCIMENTO</Text>
                     <Text style={stylesInside.cardPreviewText}>
-                      {formatDate(user.birthDate)}
+                      {formatDate(user?.birthDate)}
                     </Text>
                   </View>
                   <View
@@ -97,7 +97,7 @@ export function PersonalCardModal({
                   >
                     <Text>CPF</Text>
                     <Text style={stylesInside.cardPreviewText}>
-                      {user.document}
+                      {user?.document}
                     </Text>
                   </View>
                 </View>
@@ -141,7 +141,7 @@ export function PersonalCardModal({
                   >
                     <Text>ATIVAÇÃO</Text>
                     <Text style={stylesInside.cardPreviewText}>
-                      {formatDate(user.activationAt)}
+                      {formatDate(user?.activationAt)}
                     </Text>
                   </View>
                   <View
@@ -156,7 +156,7 @@ export function PersonalCardModal({
                   >
                     <Text>VALIDADE</Text>
                     <Text style={stylesInside.cardPreviewText}>
-                      {formatDate(user.validAt)}
+                      {formatDate(user?.validAt)}
                     </Text>
                   </View>
                 </View>
@@ -180,7 +180,7 @@ export function PersonalCardModal({
                 >
                   <Text>NOME DA EMPRESA</Text>
                   <Text style={stylesInside.cardPreviewText}>
-                    {user.companyName}
+                    {user?.companyName}
                   </Text>
                 </View>
               </View>

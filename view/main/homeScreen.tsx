@@ -1,7 +1,7 @@
 import Hello from "@/components/fragments/hello";
 import Header from "@/components/header";
 import HomeMain from "@/components/homeMain";
-import { PersonalCardModal } from "@/components/modal";
+import PersonalCardModal from "@/components/modal";
 import { Colors } from "@/constants/Colors";
 import ThemeContext from "@/controllers/context";
 import { menuItens } from "@/controllers/utils";
@@ -75,7 +75,7 @@ export default function HomeScreen() {
         />
       )}
       <Header notify={notify}></Header>
-      {user.name && <Hello user={user}></Hello>}
+      {!!user && user?.name && <Hello user={user}></Hello>}
       <HomeMain
         openCard={handleOpenModal}
         cards={cards}

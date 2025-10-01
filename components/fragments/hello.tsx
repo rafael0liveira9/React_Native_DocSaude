@@ -21,7 +21,7 @@ export default function Hello({ user }: any) {
       <Text
         style={[styles.helloTitle, { color: themeColors.backgroundSecondary }]}
       >
-        Olá, {user.name}!
+        Olá, {user?.name}!
       </Text>
     </View>
   );

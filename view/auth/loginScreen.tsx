@@ -1,4 +1,4 @@
-import { Login } from "@/api/auth";
+import { handleLogin } from "@/api/auth";
 import { Colors } from "@/constants/Colors";
 import { styles } from "@/styles/auth";
 import { globalStyles } from "@/styles/global";
@@ -26,20 +26,29 @@ export default function LoginScreen() {
     [password, setPassword] = useState<string>(""),
     [textError, setTexterror] = useState<string>("");
 
-  async function handleLogin() {
+  async function handleLoginFunction() {
     if (!!email && email.length > 1 && !!password && password.length > 1) {
       setTexterror("");
       setIsLoading(true);
       Keyboard.dismiss();
-      const res = await Login(email, password);
+      const res = await handleLogin(email, password);
 
       if (res?.token) {
         try {
-          await SecureStore.setItemAsync("user-token", res?.token);
+          await SecureStore.setItemAsync("user-token", res.token);
+
+          if (res.pushToken) {
+            await SecureStore.setItemAsync("expo-push-token", res.pushToken);
+            console.log("Expo Push Token salvo localmente:", res.pushToken);
+
+            // await api.post('/savePushToken', { userId: res.id, pushToken: res.pushToken });
+          }
+
           Toast.show({
             type: "success",
             text1: `Login efetuado para ${email}`,
           });
+
           router.replace("/(main)");
         } catch (error) {
           console.log("error", error);
@@ -123,7 +132,7 @@ export default function LoginScreen() {
         <View style={{ height: 30 }} />
 
         <TouchableOpacity
-          onPress={handleLogin}
+          onPress={handleLoginFunction}
           disabled={isLoading}
           style={[styles.loginBtnStyle, { backgroundColor: themeColors.tint }]}
         >

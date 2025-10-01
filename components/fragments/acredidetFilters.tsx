@@ -79,7 +79,7 @@ export default function AcredidetFilters({
         >
           <Picker.Item
             style={{ fontSize: 20 }}
-            label="Especialidade"
+            label="Serviço de Saúde"
             value=""
           />
           {specialities.map((s: any) => (

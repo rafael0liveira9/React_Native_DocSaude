@@ -1,4 +1,6 @@
+import { registerForPushNotificationsAsync } from "@/api/firebase";
 import { Colors } from "@/constants/Colors";
+import { DocSaudeContainer } from "@/controllers/context"; // 👈 importa o provider
 import SplashScreen from "@/view/splashScreen";
 import { Stack, useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
@@ -11,9 +13,9 @@ import Toast from "react-native-toast-message";
 export default function RootLayout() {
   const themeColors = Colors["dark"];
   const router = useRouter();
-  const [token, setToken] = useState<string | null>(),
-    [hasRedirected, setHasRedirected] = useState(false),
-    [isReady, setIsReady] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const [hasRedirected, setHasRedirected] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
   async function getToken() {
     try {
@@ -24,6 +26,15 @@ export default function RootLayout() {
       return null;
     }
   }
+
+  async function FirebaseToken() {
+    const expoPushToken = await registerForPushNotificationsAsync();
+    console.log("Expo Push Token:", expoPushToken);
+  }
+
+  useEffect(() => {
+    FirebaseToken();
+  }, []);
 
   useEffect(() => {
     const prepare = async () => {
@@ -53,20 +64,22 @@ export default function RootLayout() {
   }, [isReady, token]);
 
   if (!isReady) {
-    return <SplashScreen></SplashScreen>;
+    return <SplashScreen />;
   }
 
   return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-        height: "100%",
-        backgroundColor: themeColors.background,
-      }}
-    >
-      <Stack screenOptions={{ headerShown: false }} />
-      <StatusBar style="auto" />
-      <Toast />
-    </SafeAreaView>
+    <DocSaudeContainer>
+      <SafeAreaView
+        style={{
+          flex: 1,
+          height: "100%",
+          backgroundColor: themeColors.background,
+        }}
+      >
+        <Stack screenOptions={{ headerShown: false }} />
+        <StatusBar style="auto" />
+        <Toast />
+      </SafeAreaView>
+    </DocSaudeContainer>
   );
 }

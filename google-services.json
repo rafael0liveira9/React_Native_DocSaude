@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "670629169971",
+    "project_id": "doc-saude-app",
+    "storage_bucket": "doc-saude-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:670629169971:android:576c36874d16ee4355cc46",
+        "android_client_info": {
+          "package_name": "com.totaldocsaude.expo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "670629169971-oi5cp58ch3td62q9vc2ascf413m51nps.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCTo3th6cG0VP4x5fdIarPHBKrdF08WeCA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "670629169971-oi5cp58ch3td62q9vc2ascf413m51nps.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
