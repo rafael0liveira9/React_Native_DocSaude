@@ -3,8 +3,8 @@ import * as SecureStore from 'expo-secure-store';
 
 // URL da API - ajuste conforme necessário
 const API_URL = __DEV__
-  ? 'http://172.16.10.9:3000/dev' // Desenvolvimento local - IP da máquina na rede
-  : 'https://your-api-gateway-url.amazonaws.com/dev'; // Produção
+  ? 'https://d27w10rtb3dij9.cloudfront.net' // Desenvolvimento local - IP da máquina na rede
+  : 'https://d27w10rtb3dij9.cloudfront.net'; // Produção
 
 const api = axios.create({
   baseURL: API_URL,
