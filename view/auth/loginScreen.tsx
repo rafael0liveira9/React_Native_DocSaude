@@ -22,16 +22,26 @@ export default function LoginScreen() {
   const themeColors = Colors["dark"],
     router = useRouter();
   const [isLoading, setIsLoading] = useState<boolean>(false),
-    [email, setEmail] = useState<string>(""),
+    [cpf, setCpf] = useState<string>(""),
     [password, setPassword] = useState<string>(""),
     [textError, setTexterror] = useState<string>("");
 
+  // Formatar CPF
+  const formatCPF = (value: string) => {
+    const cleaned = value.replace(/\D/g, '');
+    const match = cleaned.match(/^(\d{0,3})(\d{0,3})(\d{0,3})(\d{0,2})$/);
+    if (match) {
+      return [match[1], match[2], match[3], match[4]].filter(Boolean).join('.').replace(/\.(\d{2})$/, '-$1');
+    }
+    return value;
+  };
+
   async function handleLoginFunction() {
-    if (!!email && email.length > 1 && !!password && password.length > 1) {
+    if (!!cpf && cpf.length > 1 && !!password && password.length > 1) {
       setTexterror("");
       setIsLoading(true);
       Keyboard.dismiss();
-      const res = await handleLogin(email, password);
+      const res = await handleLogin(cpf, password);
 
       if (res?.token) {
         try {
@@ -46,7 +56,7 @@ export default function LoginScreen() {
 
           Toast.show({
             type: "success",
-            text1: `Login efetuado para ${email}`,
+            text1: `Login efetuado para ${res.name || cpf}`,
           });
 
           router.replace("/(main)");
@@ -55,19 +65,19 @@ export default function LoginScreen() {
           setIsLoading(false);
         }
       } else {
-        setTexterror("* Email ou senha incorretos.");
+        setTexterror("* CPF ou senha incorretos.");
         Toast.show({
           type: "error",
-          text1: "Email ou senha incorretos.",
+          text1: "CPF ou senha incorretos.",
         });
       }
 
       setIsLoading(false);
     } else {
-      setTexterror("* Preencha com e-mail e senha para logar.");
+      setTexterror("* Preencha com CPF e senha para logar.");
       Toast.show({
         type: "error",
-        text1: "Preencha com os dados de e-mail e senha para logar.",
+        text1: "Preencha com os dados de CPF e senha para logar.",
       });
     }
   }
@@ -101,10 +111,12 @@ export default function LoginScreen() {
         <View style={{ height: 50 }} />
 
         <TextInput
-          placeholder="Usuário"
+          placeholder="CPF"
           placeholderTextColor="#ccc"
-          value={email}
-          onChangeText={setEmail}
+          value={cpf}
+          onChangeText={(text) => setCpf(formatCPF(text))}
+          keyboardType="numeric"
+          maxLength={14}
           style={[
             styles.loginInputStyle,
             {

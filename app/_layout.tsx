@@ -28,8 +28,12 @@ export default function RootLayout() {
   }
 
   async function FirebaseToken() {
-    const expoPushToken = await registerForPushNotificationsAsync();
-    console.log("Expo Push Token:", expoPushToken);
+    try {
+      const expoPushToken = await registerForPushNotificationsAsync();
+      console.log("Expo Push Token:", expoPushToken);
+    } catch (error) {
+      console.log("Firebase token registration skipped (Expo Go mode)");
+    }
   }
 
   useEffect(() => {

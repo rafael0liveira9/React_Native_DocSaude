@@ -1,7 +1,23 @@
-import analytics from "@react-native-firebase/analytics";
-import crashlytics from "@react-native-firebase/crashlytics";
-import messaging from "@react-native-firebase/messaging";
-import { Alert, Platform } from "react-native";
+import { Platform } from "react-native";
+import Constants from 'expo-constants';
+
+// Check if running in Expo Go (Firebase won't work in Expo Go)
+const isExpoGo = Constants.appOwnership === 'expo';
+
+// Conditional imports - only load Firebase in development builds
+let analytics: any = null;
+let crashlytics: any = null;
+let messaging: any = null;
+
+if (!isExpoGo) {
+  try {
+    analytics = require("@react-native-firebase/analytics").default;
+    crashlytics = require("@react-native-firebase/crashlytics").default;
+    messaging = require("@react-native-firebase/messaging").default;
+  } catch (error) {
+    console.warn("Firebase modules not available (running in Expo Go)");
+  }
+}
 
 /**
  * Log de eventos no Firebase Analytics
@@ -10,6 +26,11 @@ export async function logEvent(
   eventName: string,
   params?: Record<string, any>
 ) {
+  if (!analytics) {
+    console.log(`[MOCK] Evento registrado: ${eventName}`, params);
+    return;
+  }
+
   try {
     await analytics().logEvent(eventName, params);
     console.log(`Evento registrado: ${eventName}`, params);
@@ -22,6 +43,11 @@ export async function logEvent(
  * Log de erros no Firebase Crashlytics
  */
 export function logCrash(error: Error | string) {
+  if (!crashlytics) {
+    console.log(`[MOCK] Crash registrado:`, error);
+    return;
+  }
+
   if (typeof error === "string") {
     crashlytics().log(error);
     crashlytics().recordError(new Error(error));
@@ -41,6 +67,11 @@ export async function registerForPushNotificationsAsync(): Promise<
     return;
   }
 
+  if (!messaging) {
+    console.log("[MOCK] Push token gerado (Expo Go mode)");
+    return "expo-go-mock-token";
+  }
+
   try {
     const authStatus = await messaging().requestPermission();
     const enabled =
@@ -48,10 +79,7 @@ export async function registerForPushNotificationsAsync(): Promise<
       authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
     if (!enabled) {
-      Alert.alert(
-        "Permissão negada",
-        "Falha ao obter permissão para notificações."
-      );
+      console.warn("Permissão negada para notificações.");
       return;
     }
 
@@ -68,6 +96,11 @@ export async function registerForPushNotificationsAsync(): Promise<
  * Subscribe a tópicos (opcional)
  */
 export async function subscribeToTopic(topic: string) {
+  if (!messaging) {
+    console.log(`[MOCK] Inscrito no tópico: ${topic}`);
+    return;
+  }
+
   try {
     await messaging().subscribeToTopic(topic);
     console.log(`Inscrito no tópico: ${topic}`);
@@ -80,6 +113,11 @@ export async function subscribeToTopic(topic: string) {
  * Unsubscribe de tópicos (opcional)
  */
 export async function unsubscribeFromTopic(topic: string) {
+  if (!messaging) {
+    console.log(`[MOCK] Desinscrito do tópico: ${topic}`);
+    return;
+  }
+
   try {
     await messaging().unsubscribeFromTopic(topic);
     console.log(`Desinscrito do tópico: ${topic}`);

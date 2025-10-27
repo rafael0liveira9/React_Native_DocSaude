@@ -66,7 +66,7 @@ export default function PersonalCardModal({
                   { justifyContent: "space-around", alignItems: "flex-start" },
                 ]}
               >
-                <Text style={[stylesInside.cardPreviewText, { fontSize: 32 }]}>
+                <Text style={[stylesInside.cardPreviewText, { fontSize: 20, fontWeight: '700' }]}>
                   {user?.name}
                 </Text>
                 <View style={[globalStyles.flexr, { gap: 40 }]}>
@@ -80,7 +80,7 @@ export default function PersonalCardModal({
                       },
                     ]}
                   >
-                    <Text>NASCIMENTO</Text>
+                    <Text style={{ fontSize: 10, fontWeight: '600', opacity: 0.7 }}>NASCIMENTO</Text>
                     <Text style={stylesInside.cardPreviewText}>
                       {formatDate(user?.birthDate)}
                     </Text>
@@ -95,7 +95,7 @@ export default function PersonalCardModal({
                       },
                     ]}
                   >
-                    <Text>CPF</Text>
+                    <Text style={{ fontSize: 10, fontWeight: '600', opacity: 0.7 }}>CPF</Text>
                     <Text style={stylesInside.cardPreviewText}>
                       {user?.document}
                     </Text>
@@ -123,7 +123,7 @@ export default function PersonalCardModal({
                     },
                   ]}
                 >
-                  <Text>NÚMERO DA CARTEIRINHA</Text>
+                  <Text style={{ fontSize: 10, fontWeight: '600', opacity: 0.7 }}>NÚMERO DA CARTEIRINHA</Text>
                   <Text style={stylesInside.cardPreviewText}>
                     {formattedNumber}
                   </Text>
@@ -139,7 +139,7 @@ export default function PersonalCardModal({
                       },
                     ]}
                   >
-                    <Text>ATIVAÇÃO</Text>
+                    <Text style={{ fontSize: 10, fontWeight: '600', opacity: 0.7 }}>ATIVAÇÃO</Text>
                     <Text style={stylesInside.cardPreviewText}>
                       {formatDate(user?.activationAt)}
                     </Text>
@@ -154,7 +154,7 @@ export default function PersonalCardModal({
                       },
                     ]}
                   >
-                    <Text>VALIDADE</Text>
+                    <Text style={{ fontSize: 10, fontWeight: '600', opacity: 0.7 }}>VALIDADE</Text>
                     <Text style={stylesInside.cardPreviewText}>
                       {formatDate(user?.validAt)}
                     </Text>
@@ -178,7 +178,7 @@ export default function PersonalCardModal({
                     },
                   ]}
                 >
-                  <Text>NOME DA EMPRESA</Text>
+                  <Text style={{ fontSize: 10, fontWeight: '600', opacity: 0.7 }}>NOME DA EMPRESA</Text>
                   <Text style={stylesInside.cardPreviewText}>
                     {user?.companyName}
                   </Text>
@@ -218,11 +218,12 @@ export default function PersonalCardModal({
                 <Text
                   style={{
                     color: themeColors.background,
-                    fontWeight: 600,
-                    fontSize: 20,
+                    fontWeight: '600',
+                    fontSize: 14,
+                    textAlign: 'center',
                   }}
                 >
-                  Fechar{"\n"} cartão
+                  Fechar cartão
                 </Text>
               </Pressable>
             </View>
@@ -291,7 +292,7 @@ const stylesInside = StyleSheet.create({
     borderBottomRightRadius: 35,
   },
   cardPreviewText: {
-    fontSize: 30,
+    fontSize: 18,
     fontWeight: 600,
   },
 });

@@ -6,7 +6,8 @@ import { getAllUFs, getCitiesByUF } from "@/controllers/utils";
 import { styles } from "@/styles/acredidet";
 import { globalStyles } from "@/styles/global";
 import { useContext, useEffect, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View, ActivityIndicator } from "react-native";
+import { getRedeCredenciada, getCidadesRedeCredenciada } from "@/api/redeCredenciada";
 
 export default function AcreditedNetScreen() {
   const themeColors = Colors["dark"];
@@ -17,7 +18,62 @@ export default function AcreditedNetScreen() {
   const [ufs, setUFs] = useState<string[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [filteredEstablishments, setFilteredEstablishments] = useState<any>([]);
+  const [loading, setLoading] = useState<boolean>(false);
 
+  // Carregar rede credenciada da API
+  async function loadRedeCredenciada() {
+    setLoading(true);
+    try {
+      const search = selectedSpeciality || "";
+      const cidade = selectedCity || "";
+      const result = await getRedeCredenciada(search, cidade, 1, 100);
+
+      if (result && result.rede && Array.isArray(result.rede)) {
+        // Mapear dados da API para o formato esperado
+        const mappedEstablishments = result.rede.map((item: any) => ({
+          id: item.id,
+          name: item.nome_fantasia,
+          speciality: item.parceiro || "Geral",
+          uf: item.cidade_uf?.split('-')[1]?.trim() || "",
+          city: item.cidade_uf?.split('-')[0]?.trim() || "",
+          address: item.endereco || "",
+          number: "",
+          zipCode: "",
+          complement: "",
+          telefone: item.telefone,
+          site: item.site,
+          horario_semana: item.horario_func_semana,
+          horario_sabado: item.horario_func_sabado,
+          email: item.email_1,
+        }));
+        setFilteredEstablishments(mappedEstablishments);
+      } else {
+        // Se a API falhar, usar dados mock como fallback
+        console.log('Usando dados mock como fallback');
+        setFilteredEstablishments(establishments);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar rede credenciada:', error);
+      // Usar dados mock em caso de erro
+      setFilteredEstablishments(establishments);
+    }
+    setLoading(false);
+  }
+
+  // Carregar cidades da rede credenciada
+  async function loadCidadesRede() {
+    try {
+      const cidadesRede = await getCidadesRedeCredenciada();
+      if (cidadesRede.length > 0) {
+        const cidadesFormatadas = cidadesRede.map(c => c.split('-')[0]?.trim()).filter(Boolean);
+        setCities(cidadesFormatadas);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar cidades:', error);
+    }
+  }
+
+  // Dados mock - manter como fallback
   const establishments: any[] = [
     {
       id: 1,
@@ -280,6 +336,8 @@ export default function AcreditedNetScreen() {
 
   useEffect(() => {
     SetAllUfs();
+    loadRedeCredenciada();
+    loadCidadesRede();
   }, []);
 
   useEffect(() => {
@@ -289,28 +347,8 @@ export default function AcreditedNetScreen() {
   }, [selectedUF]);
 
   useEffect(() => {
-    let filtered = establishments;
-
-    if (selectedUF) {
-      filtered = filtered.filter(
-        (e) => e.uf.toLowerCase() === selectedUF.toLowerCase()
-      );
-    }
-
-    if (selectedCity) {
-      filtered = filtered.filter(
-        (e) => e.city.toLowerCase() === selectedCity.toLowerCase()
-      );
-    }
-
-    if (selectedSpeciality) {
-      filtered = filtered.filter(
-        (e) => e.speciality.toLowerCase() === selectedSpeciality.toLowerCase()
-      );
-    }
-
-    setFilteredEstablishments(filtered);
-  }, [selectedUF, selectedCity, selectedSpeciality]);
+    loadRedeCredenciada();
+  }, [selectedCity, selectedSpeciality]);
 
   return (
     <View
@@ -361,26 +399,32 @@ export default function AcreditedNetScreen() {
           </Text>
         </View>
         <View style={{ width: "100%" }}>
-          {!!establishments &&
-          Array.isArray(establishments) &&
-          establishments.length > 0 ? (
-            <AcredidetList
-              filteredEstablishments={filteredEstablishments}
-              themeColors={themeColors}
-            />
+          {loading ? (
+            <ActivityIndicator size="large" color={themeColors.tint} style={{ marginTop: 30 }} />
           ) : (
-            <View style={(globalStyles.flexc, globalStyles.wfull)}>
-              <Text
-                style={{
-                  marginTop: 30,
-                  marginBottom: 30,
-                  fontWeight: 600,
-                  fontSize: 16,
-                }}
-              >
-                Desculpe, nenhum parceiro encontrado.
-              </Text>
-            </View>
+            <>
+              {!!filteredEstablishments &&
+              Array.isArray(filteredEstablishments) &&
+              filteredEstablishments.length > 0 ? (
+                <AcredidetList
+                  filteredEstablishments={filteredEstablishments}
+                  themeColors={themeColors}
+                />
+              ) : (
+                <View style={(globalStyles.flexc, globalStyles.wfull)}>
+                  <Text
+                    style={{
+                      marginTop: 30,
+                      marginBottom: 30,
+                      fontWeight: 600,
+                      fontSize: 16,
+                    }}
+                  >
+                    Desculpe, nenhum parceiro encontrado.
+                  </Text>
+                </View>
+              )}
+            </>
           )}
         </View>
       </ScrollView>

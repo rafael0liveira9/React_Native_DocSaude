@@ -45,20 +45,25 @@ export default function PersonalCardCarousel({
             { justifyContent: "space-around", alignItems: "flex-start" },
           ]}
         >
-          <Text style={styles.cardPreviewText}>{item.name}</Text>
-          <Text style={styles.cardPreviewText}>{formattedNumber}</Text>
+          <View>
+            <Text style={[styles.cardPreviewText, { fontSize: 16, fontWeight: '700' }]}>{item.name}</Text>
+            {item.companyName && (
+              <Text style={[styles.cardPreviewText, { fontSize: 12, fontWeight: '600', opacity: 0.8, marginTop: 2 }]}>{item.companyName}</Text>
+            )}
+          </View>
+          <Text style={[styles.cardPreviewText, { fontSize: 18, fontWeight: '700', letterSpacing: 1 }]}>{formattedNumber}</Text>
           <View
             style={[
               globalStyles.flexc,
               {
                 justifyContent: "space-around",
                 alignItems: "flex-start",
-                gap: 10,
+                gap: 5,
               },
             ]}
           >
-            <Text>VALIDADE</Text>
-            <Text style={styles.cardPreviewText}>
+            <Text style={{ fontSize: 10, fontWeight: '600', opacity: 0.7 }}>VALIDADE</Text>
+            <Text style={[styles.cardPreviewText, { fontSize: 14, fontWeight: '600' }]}>
               {formatDate(item.validAt)}
             </Text>
           </View>
@@ -91,8 +96,8 @@ export default function PersonalCardCarousel({
             >
               <AntDesign name="eye" size={24} color={themeColors.background} />
             </View>
-            <Text style={{ color: themeColors.background, fontWeight: "600" }}>
-              Ver dados{"\n"} do cartão
+            <Text style={{ color: themeColors.background, fontWeight: "600", fontSize: 12, textAlign: 'center', lineHeight: 14 }}>
+              Ver dados do cartão
             </Text>
           </Pressable>
         </View>
@@ -107,7 +112,7 @@ export default function PersonalCardCarousel({
   };
 
   return (
-    <View>
+    <View style={{ height: 240 }}>
       <FlatList
         ref={flatListRef}
         data={cards}
@@ -122,6 +127,7 @@ export default function PersonalCardCarousel({
         scrollEventThrottle={16}
         contentContainerStyle={{
           gap: 30,
+          paddingBottom: 0,
         }}
       />
 
@@ -130,7 +136,7 @@ export default function PersonalCardCarousel({
         style={{
           flexDirection: "row",
           justifyContent: "center",
-          marginTop: 10,
+          marginTop: 12,
           gap: 8,
         }}
       >
@@ -141,7 +147,6 @@ export default function PersonalCardCarousel({
               width: i === currentIndex ? 12 : 8,
               height: i === currentIndex ? 12 : 8,
               borderRadius: 6,
-              marginTop: 20,
               backgroundColor:
                 i === currentIndex ? themeColors.tint : themeColors.greyMedium,
             }}

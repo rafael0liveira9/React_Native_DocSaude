@@ -1,64 +1,111 @@
-import analytics from "@react-native-firebase/analytics";
-import crashlytics from "@react-native-firebase/crashlytics";
+import Constants from 'expo-constants';
 import { registerForPushNotificationsAsync } from "./firebase";
+import api from "./config";
 
-/**
- * Mock de login
- */
-export async function Login(email: string, password: string) {
-  if (password === "111111") {
-    return {
-      id: 1,
-      email: "testerafael@hotmail.com",
-      token: "teste-token",
-    };
+// Check if running in Expo Go (Firebase won't work in Expo Go)
+const isExpoGo = Constants.appOwnership === 'expo';
+
+// Conditional imports - only load Firebase in development builds
+let analytics: any = null;
+let crashlytics: any = null;
+
+if (!isExpoGo) {
+  try {
+    analytics = require("@react-native-firebase/analytics").default;
+    crashlytics = require("@react-native-firebase/crashlytics").default;
+  } catch (error) {
+    console.warn("Firebase modules not available (running in Expo Go)");
   }
-  return null;
 }
 
 /**
- * Mock de dados do usuário
+ * Login com CPF e senha
  */
-export async function GetMyData(token: string) {
-  if (token === "teste-token") {
-    return {
-      id: 1,
-      email: "testerafael@hotmail.com",
-      name: "Rafael Teste",
-      companyName: "Empresa Teste S/A",
-      document: "06473846980",
-      number: "9999999999999999",
-      birthDate: "1989-12-18T14:21:08.000Z",
-      activationAt: "2024-08-22T14:21:08.000Z",
-      validAt: "2027-02-22T14:21:08.000Z",
-      token: "teste-token",
-    };
+export async function Login(cpf: string, password: string) {
+  try {
+    const response = await api.post('/auth/login', {
+      cpf: cpf.replace(/\D/g, ''), // Remove formatação do CPF
+      senha: password,
+    });
+
+    if (response.data.success) {
+      return {
+        id: response.data.data.user.id,
+        token: response.data.data.token,
+        user: response.data.data.user,
+        dependentes: response.data.data.dependentes || [],
+      };
+    }
+    return null;
+  } catch (error: any) {
+    console.error('Erro no login:', error.response?.data || error.message);
+    return null;
   }
-  return null;
+}
+
+/**
+ * Buscar dados do usuário logado
+ */
+export async function GetMyData(userId: number) {
+  try {
+    const response = await api.get(`/assinantes/${userId}`);
+
+    if (response.data.success) {
+      const userData = response.data.data;
+      return {
+        id: userData.id,
+        email: userData.email,
+        name: userData.nome,
+        document: userData.cpf,
+        number: userData.numero_carteirinha,
+        birthDate: userData.data_nascimento,
+        phone: userData.telefone,
+        cellphone: userData.celular,
+        address: `${userData.endereco}, ${userData.numero}${userData.complemento ? ' - ' + userData.complemento : ''}`,
+        city: userData.cidade,
+        state: userData.estado,
+        companyName: userData.nome_empresa || userData.empresa || '',
+        dependentes: userData.dependentes || [],
+      };
+    }
+    return null;
+  } catch (error: any) {
+    console.error('Erro ao buscar dados:', error.response?.data || error.message);
+    return null;
+  }
 }
 
 /**
  * Função principal de login
  */
-export async function handleLogin(email: string, password: string) {
+export async function handleLogin(cpf: string, password: string) {
   try {
-    const response = await Login(email, password);
+    const response = await Login(cpf, password);
 
     if (!response) {
-      crashlytics().log("Login falhou: dados inválidos");
-      crashlytics().recordError(
-        new Error("Login falhou: email ou senha incorretos")
-      );
+      if (crashlytics) {
+        crashlytics().log("Login falhou: dados inválidos");
+        crashlytics().recordError(
+          new Error("Login falhou: CPF ou senha incorretos")
+        );
+      } else {
+        console.log("[MOCK] Login falhou: dados inválidos");
+      }
       return null;
     }
 
     // Log de evento no Firebase Analytics
-    await analytics().logEvent("login_success", {
-      userId: response.id,
-      email: response.email,
-    });
+    if (analytics) {
+      await analytics().logEvent("login_success", {
+        userId: response.id,
+        cpf: response.user.cpf,
+      });
+    } else {
+      console.log("[MOCK] Login success event logged");
+    }
 
-    const userData = await GetMyData(response.token);
+    // Buscar dados completos do usuário
+    const userData = await GetMyData(response.id);
 
     // Registro de push notifications
     const pushToken = await registerForPushNotificationsAsync();
@@ -66,10 +113,15 @@ export async function handleLogin(email: string, password: string) {
 
     return {
       ...userData,
+      token: response.token,
       pushToken,
     };
   } catch (error: any) {
-    crashlytics().recordError(error);
+    if (crashlytics) {
+      crashlytics().recordError(error);
+    } else {
+      console.log("[MOCK] Error logged:", error);
+    }
     console.error("Erro no login:", error);
     return null;
   }

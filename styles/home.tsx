@@ -17,23 +17,23 @@ export const styles = StyleSheet.create({
   },
   personalCardPreview: {
     width: "100%",
-    height: 280,
+    height: 200,
     borderRadius: 35,
   },
   cardFirst: {
-    width: "80%",
+    width: "73%",
     height: "100%",
-    paddingHorizontal: 30,
-    paddingVertical: 40,
+    paddingHorizontal: 25,
+    paddingVertical: 25,
   },
   cardSecond: {
-    width: "20%",
+    width: "27%",
     height: "100%",
     borderTopRightRadius: 35,
     borderBottomRightRadius: 35,
   },
   cardPreviewText: {
-    fontSize: 28,
+    fontSize: 18,
     fontWeight: 600,
   },
   previewBtnBox: {
@@ -53,8 +53,8 @@ export const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   menuCardItem: {
-    width: "30%",
-    aspectRatio: 1,
+    width: "31%",
+    height: 115,
     marginBottom: 30,
     borderWidth: 2,
     borderRadius: 15,
@@ -72,8 +72,9 @@ export const styles = StyleSheet.create({
     paddingVertical: 15,
   },
   menuCardItemText: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: 600,
     textAlign: "left",
+    flexWrap: "wrap",
   },
 });

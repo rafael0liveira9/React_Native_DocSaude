@@ -66,14 +66,7 @@ export default function HomeScreen() {
         backgroundColor: themeColors.background,
       }}
     >
-      {cardSelected && (
-        <PersonalCardModal
-          visible={modalPersonalCardVisible}
-          user={cardSelected}
-          onClose={handleCloseModal}
-          themeColors={themeColors}
-        />
-      )}
+
       <Header notify={notify}></Header>
       {!!user && user?.name && <Hello user={user}></Hello>}
       <HomeMain
@@ -81,6 +74,13 @@ export default function HomeScreen() {
         cards={cards}
         menuItens={menuItens}
       ></HomeMain>
+
+      <PersonalCardModal
+        visible={modalPersonalCardVisible}
+        user={cardSelected}
+        themeColors={themeColors}
+        onClose={handleCloseModal}
+      />
     </View>
   );
 }

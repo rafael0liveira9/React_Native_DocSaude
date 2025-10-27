@@ -1,5 +1,5 @@
 import { Picker } from "@react-native-picker/picker";
-import { View } from "react-native";
+import { View, Platform } from "react-native";
 
 export default function AcredidetFilters({
   ufs,
@@ -13,6 +13,8 @@ export default function AcredidetFilters({
   specialities,
   themeColors,
 }: any) {
+  const pickerStyle = Platform.OS === 'ios' ? { height: 120 } : {};
+
   return (
     <View style={{ width: "85%", marginVertical: 20 }}>
       <View
@@ -22,16 +24,18 @@ export default function AcredidetFilters({
           borderWidth: 2,
           borderRadius: 12,
           paddingHorizontal: 12,
+          overflow: 'hidden',
         }}
       >
         <Picker
           selectedValue={selectedUF}
           onValueChange={(value) => setSelectedUF(value)}
+          style={pickerStyle}
+          itemStyle={{ height: 120, fontSize: 16 }}
         >
-          <Picker.Item style={{ fontSize: 20 }} label="UF" value="" />
+          <Picker.Item label="UF" value="" />
           {ufs.map((uf: any) => (
             <Picker.Item
-              style={{ fontSize: 20 }}
               key={uf}
               label={uf}
               value={uf}
@@ -46,17 +50,19 @@ export default function AcredidetFilters({
           borderWidth: 2,
           borderRadius: 12,
           paddingHorizontal: 12,
+          overflow: 'hidden',
         }}
       >
         <Picker
           selectedValue={selectedCity}
           onValueChange={(value) => setSelectedCity(value)}
           enabled={cities.length > 0}
+          style={pickerStyle}
+          itemStyle={{ height: 120, fontSize: 16 }}
         >
-          <Picker.Item style={{ fontSize: 20 }} label="Cidade" value="" />
+          <Picker.Item label="Cidade" value="" />
           {cities.map((city: any) => (
             <Picker.Item
-              style={{ fontSize: 20 }}
               key={city}
               label={city}
               value={city}
@@ -71,19 +77,21 @@ export default function AcredidetFilters({
           borderWidth: 2,
           borderRadius: 12,
           paddingHorizontal: 12,
+          overflow: 'hidden',
         }}
       >
         <Picker
           selectedValue={selectedSpeciality}
           onValueChange={(value) => setSelectedSpeciality(value)}
+          style={pickerStyle}
+          itemStyle={{ height: 120, fontSize: 16 }}
         >
           <Picker.Item
-            style={{ fontSize: 20 }}
             label="Serviço de Saúde"
             value=""
           />
           {specialities.map((s: any) => (
-            <Picker.Item style={{ fontSize: 20 }} key={s} label={s} value={s} />
+            <Picker.Item key={s} label={s} value={s} />
           ))}
         </Picker>
       </View>

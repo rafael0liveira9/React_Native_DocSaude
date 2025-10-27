@@ -21,7 +21,8 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "ios": {
       "bundleIdentifier": "com.totaldocsaude.expo.ios",

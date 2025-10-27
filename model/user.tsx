@@ -3,6 +3,7 @@ export interface DefaultUser {
   email: string;
   name: string;
   password?: string;
+  companyName?: string;
 }
 
 export interface LoginUser {
@@ -10,4 +11,5 @@ export interface LoginUser {
   email: string;
   name: string;
   password?: string;
+  companyName?: string;
 }
