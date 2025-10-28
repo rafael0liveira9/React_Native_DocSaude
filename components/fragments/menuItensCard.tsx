@@ -4,9 +4,17 @@ import { styles } from "@/styles/home";
 import { useRouter } from "expo-router";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
-export default function MenuItensCard({ menu }: any) {
+export default function MenuItensCard({ menu, onCustomAction }: any) {
   const themeColors = Colors["dark"];
   const router = useRouter();
+
+  const handlePress = (item: any) => {
+    if (item.action && onCustomAction) {
+      onCustomAction(item.action);
+    } else if (item.url) {
+      router.push(item.url);
+    }
+  };
 
   return (
     <View style={[globalStyles.flexr, globalStyles.wfull, styles.menuCardMain]}>
@@ -21,7 +29,7 @@ export default function MenuItensCard({ menu }: any) {
               },
             ]}
             key={y}
-            onPress={() => router.push(e.url)}
+            onPress={() => handlePress(e)}
           >
             <View
               style={{

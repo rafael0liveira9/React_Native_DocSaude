@@ -13,7 +13,7 @@ interface PersonalCardCarouselProps {
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH * 0.85;
-const GAP = 30;
+const GAP = 20;
 
 export default function PersonalCardCarousel({
   cards,
@@ -30,7 +30,6 @@ export default function PersonalCardCarousel({
       <View
         style={[
           globalStyles.flexr,
-          globalStyles.wfull,
           styles.personalCardPreview,
           {
             backgroundColor: themeColors.grey,
@@ -108,7 +107,7 @@ export default function PersonalCardCarousel({
   const onScroll = (event: any) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / (CARD_WIDTH + GAP));
-    setCurrentIndex(index);
+    setCurrentIndex(Math.max(0, Math.min(index, cards.length - 1)));
   };
 
   return (
@@ -126,8 +125,9 @@ export default function PersonalCardCarousel({
         onScroll={onScroll}
         scrollEventThrottle={16}
         contentContainerStyle={{
-          gap: 30,
+          gap: GAP,
           paddingBottom: 0,
+          alignItems: 'center',
         }}
       />
 

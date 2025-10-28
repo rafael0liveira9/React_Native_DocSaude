@@ -1,3 +1,7 @@
+import {
+  getCidadesRedeCredenciada,
+  getRedeCredenciada,
+} from "@/api/redeCredenciada";
 import AcredidetFilters from "@/components/fragments/acredidetFilters";
 import AcredidetList from "@/components/fragments/acredidetFlatList";
 import { Colors } from "@/constants/Colors";
@@ -5,9 +9,16 @@ import ThemeContext from "@/controllers/context";
 import { getAllUFs, getCitiesByUF } from "@/controllers/utils";
 import { styles } from "@/styles/acredidet";
 import { globalStyles } from "@/styles/global";
+import { FontAwesome } from "@expo/vector-icons";
 import { useContext, useEffect, useState } from "react";
-import { ScrollView, Text, View, ActivityIndicator } from "react-native";
-import { getRedeCredenciada, getCidadesRedeCredenciada } from "@/api/redeCredenciada";
+import {
+  ActivityIndicator,
+  Linking,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function AcreditedNetScreen() {
   const themeColors = Colors["dark"];
@@ -34,8 +45,8 @@ export default function AcreditedNetScreen() {
           id: item.id,
           name: item.nome_fantasia,
           speciality: item.parceiro || "Geral",
-          uf: item.cidade_uf?.split('-')[1]?.trim() || "",
-          city: item.cidade_uf?.split('-')[0]?.trim() || "",
+          uf: item.cidade_uf?.split("-")[1]?.trim() || "",
+          city: item.cidade_uf?.split("-")[0]?.trim() || "",
           address: item.endereco || "",
           number: "",
           zipCode: "",
@@ -49,11 +60,11 @@ export default function AcreditedNetScreen() {
         setFilteredEstablishments(mappedEstablishments);
       } else {
         // Se a API falhar, usar dados mock como fallback
-        console.log('Usando dados mock como fallback');
+        console.log("Usando dados mock como fallback");
         setFilteredEstablishments(establishments);
       }
     } catch (error) {
-      console.error('Erro ao carregar rede credenciada:', error);
+      console.error("Erro ao carregar rede credenciada:", error);
       // Usar dados mock em caso de erro
       setFilteredEstablishments(establishments);
     }
@@ -65,11 +76,13 @@ export default function AcreditedNetScreen() {
     try {
       const cidadesRede = await getCidadesRedeCredenciada();
       if (cidadesRede.length > 0) {
-        const cidadesFormatadas = cidadesRede.map(c => c.split('-')[0]?.trim()).filter(Boolean);
+        const cidadesFormatadas = cidadesRede
+          .map((c) => c.split("-")[0]?.trim())
+          .filter(Boolean);
         setCities(cidadesFormatadas);
       }
     } catch (error) {
-      console.error('Erro ao carregar cidades:', error);
+      console.error("Erro ao carregar cidades:", error);
     }
   }
 
@@ -334,6 +347,18 @@ export default function AcreditedNetScreen() {
     }
   }
 
+  const handleWhatsApp = () => {
+    const phoneNumber = "5541988413030";
+    const message = "Olá, quero agendar uma consulta...";
+    const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
+      message
+    )}`;
+
+    Linking.openURL(url).catch(() =>
+      alert("Não foi possível abrir o WhatsApp.")
+    );
+  };
+
   useEffect(() => {
     SetAllUfs();
     loadRedeCredenciada();
@@ -400,7 +425,11 @@ export default function AcreditedNetScreen() {
         </View>
         <View style={{ width: "100%" }}>
           {loading ? (
-            <ActivityIndicator size="large" color={themeColors.tint} style={{ marginTop: 30 }} />
+            <ActivityIndicator
+              size="large"
+              color={themeColors.tint}
+              style={{ marginTop: 30 }}
+            />
           ) : (
             <>
               {!!filteredEstablishments &&
@@ -428,6 +457,38 @@ export default function AcreditedNetScreen() {
           )}
         </View>
       </ScrollView>
+
+      <TouchableOpacity
+        style={{
+          position: "absolute",
+          bottom: 20,
+          right: 20,
+          backgroundColor: "#25D366",
+          flexDirection: "row",
+          alignItems: "center",
+          paddingVertical: 12,
+          paddingHorizontal: 16,
+          borderRadius: 30,
+          elevation: 5,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.25,
+          shadowRadius: 3.84,
+        }}
+        onPress={handleWhatsApp}
+      >
+        <Text
+          style={{
+            color: "#FFF",
+            fontSize: 16,
+            fontWeight: "600",
+            marginRight: 8,
+          }}
+        >
+          Agendar Consulta
+        </Text>
+        <FontAwesome name="whatsapp" size={24} color="#FFF" />
+      </TouchableOpacity>
     </View>
   );
 }

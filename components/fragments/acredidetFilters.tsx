@@ -1,5 +1,5 @@
 import { Picker } from "@react-native-picker/picker";
-import { View, Platform } from "react-native";
+import { Platform, View } from "react-native";
 
 export default function AcredidetFilters({
   ufs,
@@ -13,7 +13,10 @@ export default function AcredidetFilters({
   specialities,
   themeColors,
 }: any) {
-  const pickerStyle = Platform.OS === 'ios' ? { height: 120 } : {};
+  const pickerStyle =
+    Platform.OS === "ios"
+      ? { height: 60, color: "#000" }
+      : { height: 60, color: "#000" };
 
   return (
     <View style={{ width: "85%", marginVertical: 20 }}>
@@ -24,22 +27,21 @@ export default function AcredidetFilters({
           borderWidth: 2,
           borderRadius: 12,
           paddingHorizontal: 12,
-          overflow: 'hidden',
+          backgroundColor: themeColors.white || "#FFF",
+          height: 60,
+          justifyContent: "center",
         }}
       >
         <Picker
           selectedValue={selectedUF}
           onValueChange={(value) => setSelectedUF(value)}
           style={pickerStyle}
-          itemStyle={{ height: 120, fontSize: 16 }}
+          itemStyle={{ height: 60, fontSize: 16, color: "#000" }}
+          dropdownIconColor={"#000"}
         >
           <Picker.Item label="UF" value="" />
           {ufs.map((uf: any) => (
-            <Picker.Item
-              key={uf}
-              label={uf}
-              value={uf}
-            />
+            <Picker.Item key={uf} label={uf} value={uf} />
           ))}
         </Picker>
       </View>
@@ -50,7 +52,9 @@ export default function AcredidetFilters({
           borderWidth: 2,
           borderRadius: 12,
           paddingHorizontal: 12,
-          overflow: 'hidden',
+          backgroundColor: themeColors.white || "#FFF",
+          height: 60,
+          justifyContent: "center",
         }}
       >
         <Picker
@@ -58,15 +62,12 @@ export default function AcredidetFilters({
           onValueChange={(value) => setSelectedCity(value)}
           enabled={cities.length > 0}
           style={pickerStyle}
-          itemStyle={{ height: 120, fontSize: 16 }}
+          itemStyle={{ height: 60, fontSize: 16 }}
+          dropdownIconColor={"#000"}
         >
           <Picker.Item label="Cidade" value="" />
           {cities.map((city: any) => (
-            <Picker.Item
-              key={city}
-              label={city}
-              value={city}
-            />
+            <Picker.Item key={city} label={city} value={city} />
           ))}
         </Picker>
       </View>
@@ -77,19 +78,19 @@ export default function AcredidetFilters({
           borderWidth: 2,
           borderRadius: 12,
           paddingHorizontal: 12,
-          overflow: 'hidden',
+          backgroundColor: themeColors.white || "#FFF",
+          height: 60,
+          justifyContent: "center",
         }}
       >
         <Picker
           selectedValue={selectedSpeciality}
           onValueChange={(value) => setSelectedSpeciality(value)}
           style={pickerStyle}
-          itemStyle={{ height: 120, fontSize: 16 }}
+          itemStyle={{ height: 60, fontSize: 16 }}
+          dropdownIconColor={"#000"}
         >
-          <Picker.Item
-            label="Serviço de Saúde"
-            value=""
-          />
+          <Picker.Item label="Serviço de Saúde" value="" />
           {specialities.map((s: any) => (
             <Picker.Item key={s} label={s} value={s} />
           ))}

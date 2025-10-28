@@ -16,7 +16,6 @@ export const styles = StyleSheet.create({
     justifyContent: "space-around",
   },
   personalCardPreview: {
-    width: "100%",
     height: 200,
     borderRadius: 35,
   },

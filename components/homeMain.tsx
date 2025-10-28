@@ -4,7 +4,7 @@ import { ScrollView, View } from "react-native";
 import PersonalCardPreview from "./fragments/PersonalCardPreview";
 import MenuItensCard from "./fragments/menuItensCard";
 
-export default function HomeMain({ openCard, cards, menuItens }: any) {
+export default function HomeMain({ openCard, cards, menuItens, onCustomAction }: any) {
   const themeColors = Colors["dark"];
 
   return (
@@ -21,7 +21,7 @@ export default function HomeMain({ openCard, cards, menuItens }: any) {
         openCard={openCard}
       ></PersonalCardPreview>
       <View style={{ marginTop: 20 }}>
-        <MenuItensCard menu={menuItens}></MenuItensCard>
+        <MenuItensCard menu={menuItens} onCustomAction={onCustomAction}></MenuItensCard>
       </View>
     </ScrollView>
   );

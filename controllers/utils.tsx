@@ -4,7 +4,7 @@ export const emailRegex =
   /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\.[a-zA-Z]{2,})?$/;
 export const menuItens = [
   {
-    title: "Pronto Atendimento Online 24h",
+    title: "Pronto Atendimento",
     icon: require("../assets/docsaude/icons/scope-icon.png"),
     url: "/(stack)/example",
   },
@@ -26,12 +26,12 @@ export const menuItens = [
   {
     title: "Suporte Técnico 24h",
     icon: require("../assets/docsaude/icons/engine-icon.png"),
-    url: "/(stack)/example",
+    action: "callSupport",
   },
   {
     title: "Manual do Assinante",
     icon: require("../assets/docsaude/icons/info-icon.png"),
-    url: "/(stack)/example",
+    action: "openManual",
   },
 ];
 

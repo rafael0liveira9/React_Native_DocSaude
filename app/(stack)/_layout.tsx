@@ -11,6 +11,9 @@ function StackLayoutContent() {
         name="accredited/index"
         options={{
           title: "Rede Credenciada",
+          headerTitleStyle: {
+            fontSize: 22,
+          },
         }}
       />
       <Stack.Screen

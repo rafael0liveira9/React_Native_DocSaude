@@ -2,11 +2,13 @@ import Hello from "@/components/fragments/hello";
 import Header from "@/components/header";
 import HomeMain from "@/components/homeMain";
 import PersonalCardModal from "@/components/modal";
+import { LogoutModal } from "@/components/fragments/modalLogout";
 import { Colors } from "@/constants/Colors";
 import ThemeContext from "@/controllers/context";
 import { menuItens } from "@/controllers/utils";
 import { useContext, useState } from "react";
-import { View } from "react-native";
+import { View, Linking } from "react-native";
+import * as WebBrowser from "expo-web-browser";
 
 export default function HomeScreen() {
   const themeColors = Colors["dark"];
@@ -15,6 +17,7 @@ export default function HomeScreen() {
   const [modalPersonalCardVisible, setModalPersonalCardVisible] =
     useState<boolean>(false);
   const [cardSelected, setCardSelected] = useState<number | null>(null);
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState<boolean>(false);
   const notify = [
     { id: 1, text: "teste notify" },
     { id: 2, text: "teste notify" },
@@ -56,6 +59,30 @@ export default function HomeScreen() {
     setCardSelected(null);
   }
 
+  function handleCustomAction(action: string) {
+    if (action === "callSupport") {
+      setIsSupportModalOpen(true);
+    } else if (action === "openManual") {
+      handleOpenManual();
+    }
+  }
+
+  function handleCallSupport() {
+    const phoneNumber = "080008889633";
+    Linking.openURL(`tel:${phoneNumber}`);
+    setIsSupportModalOpen(false);
+  }
+
+  async function handleOpenManual() {
+    try {
+      await WebBrowser.openBrowserAsync(
+        "https://totaldocspublicafiles.s3.us-east-1.amazonaws.com/manualassinante.pdf"
+      );
+    } catch (error) {
+      console.error("Erro ao abrir manual:", error);
+    }
+  }
+
   return (
     <View
       style={{
@@ -73,6 +100,7 @@ export default function HomeScreen() {
         openCard={handleOpenModal}
         cards={cards}
         menuItens={menuItens}
+        onCustomAction={handleCustomAction}
       ></HomeMain>
 
       <PersonalCardModal
@@ -80,6 +108,15 @@ export default function HomeScreen() {
         user={cardSelected}
         themeColors={themeColors}
         onClose={handleCloseModal}
+      />
+
+      <LogoutModal
+        warningVisible={isSupportModalOpen}
+        themeColors={themeColors}
+        text="Ligar para o Suporte?"
+        onConfirm={handleCallSupport}
+        close={() => setIsSupportModalOpen(false)}
+        isLoading={false}
       />
     </View>
   );
