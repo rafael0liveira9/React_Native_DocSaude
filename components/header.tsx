@@ -20,7 +20,7 @@ export default function Header({ notify }: any) {
       await Promise.all(
         keysToDelete.map((key) => SecureStore.deleteItemAsync(key))
       );
-      console.log("SecureStore limpo!");
+
       setIsLoading(false);
       router.replace("/(auth)");
     } catch (error) {
@@ -63,17 +63,19 @@ export default function Header({ notify }: any) {
         style={[globalStyles.flexr, { gap: 30, justifyContent: "flex-end" }]}
       >
         <TouchableOpacity style={styles.notifyIconBox}>
-          <View
-            style={[
-              globalStyles.flexr,
-              styles.notifyFloat,
-              { backgroundColor: themeColors.danger },
-            ]}
-          >
-            <Text style={{ fontSize: 12, color: themeColors.white }}>
-              {notify.length}
-            </Text>
-          </View>
+          {notify.length > 0 && (
+            <View
+              style={[
+                globalStyles.flexr,
+                styles.notifyFloat,
+                { backgroundColor: themeColors.danger },
+              ]}
+            >
+              <Text style={{ fontSize: 12, color: themeColors.white }}>
+                {notify.length}
+              </Text>
+            </View>
+          )}
           <FontAwesome5
             name="bell"
             size={30}

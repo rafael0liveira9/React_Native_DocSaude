@@ -1,5 +1,6 @@
-import { handleLogin } from "@/api/auth";
+import { handleLogin, TermsAccept } from "@/api/auth";
 import { Colors } from "@/constants/Colors";
+import { TermsOfUseModal } from "@/components/fragments/modalTermsOfUse";
 import { styles } from "@/styles/auth";
 import { globalStyles } from "@/styles/global";
 import { useRouter } from "expo-router";
@@ -24,17 +25,61 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState<boolean>(false),
     [cpf, setCpf] = useState<string>(""),
     [password, setPassword] = useState<string>(""),
-    [textError, setTexterror] = useState<string>("");
+    [textError, setTexterror] = useState<string>(""),
+    [showTermsModal, setShowTermsModal] = useState<boolean>(false),
+    [userToken, setUserToken] = useState<string>(""),
+    [userName, setUserName] = useState<string>("");
 
   // Formatar CPF
   const formatCPF = (value: string) => {
-    const cleaned = value.replace(/\D/g, '');
+    const cleaned = value.replace(/\D/g, "");
     const match = cleaned.match(/^(\d{0,3})(\d{0,3})(\d{0,3})(\d{0,2})$/);
     if (match) {
-      return [match[1], match[2], match[3], match[4]].filter(Boolean).join('.').replace(/\.(\d{2})$/, '-$1');
+      return [match[1], match[2], match[3], match[4]]
+        .filter(Boolean)
+        .join(".")
+        .replace(/\.(\d{2})$/, "-$1");
     }
     return value;
   };
+
+  function successLogin(string: string) {
+    Toast.show({
+      type: "success",
+      text1: `Login efetuado para ${string}`,
+    });
+
+    router.replace("/(main)");
+  }
+
+  async function handleAcceptTerms() {
+    setIsLoading(true);
+    try {
+      const response = await TermsAccept(userToken);
+
+      if (response?.status === 200) {
+        Toast.show({
+          type: "success",
+          text1: "Termos aceitos com sucesso!",
+        });
+        setShowTermsModal(false);
+        successLogin(userName);
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Erro ao aceitar os termos. Tente novamente.",
+        });
+      }
+    } catch (error) {
+      console.log("Erro ao aceitar termos:", error);
+      Toast.show({
+        type: "error",
+        text1: "Erro ao aceitar os termos. Tente novamente.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   async function handleLoginFunction() {
     if (!!cpf && cpf.length > 1 && !!password && password.length > 1) {
@@ -43,23 +88,28 @@ export default function LoginScreen() {
       Keyboard.dismiss();
       const res = await handleLogin(cpf, password);
 
-      if (res?.token) {
+      if (res?.data?.token) {
         try {
-          await SecureStore.setItemAsync("user-token", res.token);
+          await SecureStore.setItemAsync("user-token", res?.data.token);
+          await SecureStore.setItemAsync("user-id", String(res?.data?.user?.id));
 
           if (res.pushToken) {
             await SecureStore.setItemAsync("expo-push-token", res.pushToken);
-            console.log("Expo Push Token salvo localmente:", res.pushToken);
-
-            // await api.post('/savePushToken', { userId: res.id, pushToken: res.pushToken });
           }
 
-          Toast.show({
-            type: "success",
-            text1: `Login efetuado para ${res.name || cpf}`,
-          });
-
-          router.replace("/(main)");
+          // Verifica se o usuário NÃO aceitou os termos
+          if (
+            !res?.data?.user?.termo_uso_aceito ||
+            res?.data?.user?.termo_uso_aceito === 0
+          ) {
+            // Usuário não aceitou os termos - abre modal
+            setUserToken(res?.data.token);
+            setUserName(res?.data?.user?.nome || cpf);
+            setShowTermsModal(true);
+          } else {
+            // Usuário já aceitou os termos - faz login normal
+            successLogin(res?.data?.user?.nome || cpf);
+          }
         } catch (error) {
           console.log("error", error);
           setIsLoading(false);
@@ -171,6 +221,29 @@ export default function LoginScreen() {
           {textError}
         </Text>
       </ScrollView>
+
+      <TermsOfUseModal
+        visible={showTermsModal}
+        themeColors={themeColors}
+        text="Termos de Uso"
+        termsLink=""
+        isLoading={isLoading}
+        onConfirm={handleAcceptTerms}
+        onCancel={() => {
+          setShowTermsModal(false);
+          Toast.show({
+            type: "info",
+            text1: "Você precisa aceitar os termos para continuar.",
+          });
+        }}
+        close={() => {
+          setShowTermsModal(false);
+          Toast.show({
+            type: "info",
+            text1: "Você precisa aceitar os termos para continuar.",
+          });
+        }}
+      />
     </KeyboardAvoidingView>
   );
 }

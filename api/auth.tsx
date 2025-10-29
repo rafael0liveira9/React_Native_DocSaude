@@ -1,9 +1,9 @@
-import Constants from 'expo-constants';
-import { registerForPushNotificationsAsync } from "./firebase";
+import Constants from "expo-constants";
 import api from "./config";
+import { registerForPushNotificationsAsync } from "./firebase";
 
 // Check if running in Expo Go (Firebase won't work in Expo Go)
-const isExpoGo = Constants.appOwnership === 'expo';
+const isExpoGo = Constants.appOwnership === "expo";
 
 // Conditional imports - only load Firebase in development builds
 let analytics: any = null;
@@ -23,8 +23,8 @@ if (!isExpoGo) {
  */
 export async function Login(cpf: string, password: string) {
   try {
-    const response = await api.post('/auth/login', {
-      cpf: cpf.replace(/\D/g, ''), // Remove formatação do CPF
+    const response = await api.post("/auth/login", {
+      cpf: cpf.replace(/\D/g, ""), // Remove formatação do CPF
       senha: password,
     });
 
@@ -38,7 +38,7 @@ export async function Login(cpf: string, password: string) {
     }
     return null;
   } catch (error: any) {
-    console.error('Erro no login:', error.response?.data || error.message);
+    console.error("Erro no login:", error.response?.data || error.message);
     return null;
   }
 }
@@ -46,13 +46,17 @@ export async function Login(cpf: string, password: string) {
 /**
  * Buscar dados do usuário logado
  */
-export async function GetMyData(userId: number) {
+export async function GetMyData(userId: number, token: string) {
   try {
-    const response = await api.get(`/assinantes/${userId}`);
+    const response = await api.get(`/assinantes/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
     if (response.data.success) {
       const userData = response.data.data;
-      return {
+      const formattedData = {
         id: userData.id,
         email: userData.email,
         name: userData.nome,
@@ -61,16 +65,22 @@ export async function GetMyData(userId: number) {
         birthDate: userData.data_nascimento,
         phone: userData.telefone,
         cellphone: userData.celular,
-        address: `${userData.endereco}, ${userData.numero}${userData.complemento ? ' - ' + userData.complemento : ''}`,
+        address: `${userData.endereco}, ${userData.numero}${
+          userData.complemento ? " - " + userData.complemento : ""
+        }`,
         city: userData.cidade,
         state: userData.estado,
-        companyName: userData.nome_empresa || userData.empresa || '',
+        companyName: userData.nome_empresa || userData.empresa || "",
         dependentes: userData.dependentes || [],
       };
+      return formattedData;
     }
     return null;
   } catch (error: any) {
-    console.error('Erro ao buscar dados:', error.response?.data || error.message);
+    console.error(
+      "Erro ao buscar dados:",
+      error.response?.data || error.message
+    );
     return null;
   }
 }
@@ -94,7 +104,6 @@ export async function handleLogin(cpf: string, password: string) {
       return null;
     }
 
-    // Log de evento no Firebase Analytics
     if (analytics) {
       await analytics().logEvent("login_success", {
         userId: response.id,
@@ -104,16 +113,10 @@ export async function handleLogin(cpf: string, password: string) {
       console.log("[MOCK] Login success event logged");
     }
 
-    // Buscar dados completos do usuário
-    const userData = await GetMyData(response.id);
-
-    // Registro de push notifications
     const pushToken = await registerForPushNotificationsAsync();
-    console.log("FCM Push Token:", pushToken);
 
     return {
-      ...userData,
-      token: response.token,
+      data: response,
       pushToken,
     };
   } catch (error: any) {
@@ -124,5 +127,27 @@ export async function handleLogin(cpf: string, password: string) {
     }
     console.error("Erro no login:", error);
     return null;
+  }
+}
+
+export async function TermsAccept(token: string) {
+  try {
+    const response = await api.post(
+      "/aceitar-termo",
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response;
+  } catch (error: any) {
+    console.error(
+      "Erro ao aceitar termos:",
+      error.response?.data || error.message
+    );
+    throw error;
   }
 }

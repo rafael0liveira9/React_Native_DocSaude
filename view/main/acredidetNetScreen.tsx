@@ -27,6 +27,7 @@ export default function AcreditedNetScreen() {
   const [selectedCity, setSelectedCity] = useState<string>("");
   const [selectedSpeciality, setSelectedSpeciality] = useState<string>("");
   const [ufs, setUFs] = useState<string[]>([]);
+  const [allCities, setAllCities] = useState<string[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [filteredEstablishments, setFilteredEstablishments] = useState<any>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -37,7 +38,15 @@ export default function AcreditedNetScreen() {
     try {
       const search = selectedSpeciality || "";
       const cidade = selectedCity || "";
-      const result = await getRedeCredenciada(search, cidade, 1, 100);
+      const result = await getRedeCredenciada(search, cidade, 1, 1000);
+
+      console.log("Parâmetros da busca:", {
+        search,
+        cidade,
+        page: 1,
+        limit: 1000,
+      });
+      console.log("Resultado da API rede credenciada:", result);
 
       if (result && result.rede && Array.isArray(result.rede)) {
         // Mapear dados da API para o formato esperado
@@ -57,6 +66,7 @@ export default function AcreditedNetScreen() {
           horario_sabado: item.horario_func_sabado,
           email: item.email_1,
         }));
+
         setFilteredEstablishments(mappedEstablishments);
       } else {
         // Se a API falhar, usar dados mock como fallback
@@ -76,6 +86,9 @@ export default function AcreditedNetScreen() {
     try {
       const cidadesRede = await getCidadesRedeCredenciada();
       if (cidadesRede.length > 0) {
+        // Salva todas as cidades com formato "Cidade - UF"
+        setAllCities(cidadesRede);
+        // Inicialmente mostra todas
         const cidadesFormatadas = cidadesRede
           .map((c) => c.split("-")[0]?.trim())
           .filter(Boolean);
@@ -83,6 +96,24 @@ export default function AcreditedNetScreen() {
       }
     } catch (error) {
       console.error("Erro ao carregar cidades:", error);
+    }
+  }
+
+  // Filtrar cidades por UF localmente
+  function filterCitiesByUF(uf: string) {
+    if (!uf) {
+      // Se não tem UF selecionada, mostra todas as cidades
+      const todasCidades = allCities
+        .map((c) => c.split("-")[0]?.trim())
+        .filter(Boolean);
+      setCities(todasCidades);
+    } else {
+      // Filtra apenas cidades da UF selecionada
+      const cidadesFiltradas = allCities
+        .filter((c) => c.split("-")[1]?.trim() === uf)
+        .map((c) => c.split("-")[0]?.trim())
+        .filter(Boolean);
+      setCities(cidadesFiltradas);
     }
   }
 
@@ -366,9 +397,10 @@ export default function AcreditedNetScreen() {
   }, []);
 
   useEffect(() => {
-    if (selectedUF) {
-      SetAllCities(selectedUF);
-    }
+    // Quando UF muda, filtra as cidades localmente
+    filterCitiesByUF(selectedUF);
+    // Limpa a cidade selecionada quando muda a UF
+    setSelectedCity("");
   }, [selectedUF]);
 
   useEffect(() => {

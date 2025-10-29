@@ -1,8 +1,8 @@
+import Constants from "expo-constants";
 import { Platform } from "react-native";
-import Constants from 'expo-constants';
 
 // Check if running in Expo Go (Firebase won't work in Expo Go)
-const isExpoGo = Constants.appOwnership === 'expo';
+const isExpoGo = Constants.appOwnership === "expo";
 
 // Conditional imports - only load Firebase in development builds
 let analytics: any = null;
@@ -33,7 +33,6 @@ export async function logEvent(
 
   try {
     await analytics().logEvent(eventName, params);
-    console.log(`Evento registrado: ${eventName}`, params);
   } catch (error) {
     console.error("Erro ao registrar evento:", error);
   }
@@ -84,7 +83,6 @@ export async function registerForPushNotificationsAsync(): Promise<
     }
 
     const token = await messaging().getToken();
-    console.log("Token FCM:", token);
     return token;
   } catch (error) {
     console.error("Erro ao registrar push notifications:", error);
@@ -120,7 +118,6 @@ export async function unsubscribeFromTopic(topic: string) {
 
   try {
     await messaging().unsubscribeFromTopic(topic);
-    console.log(`Desinscrito do tópico: ${topic}`);
   } catch (error) {
     console.error(`Erro ao desinscrever do tópico ${topic}:`, error);
   }
