@@ -28,8 +28,6 @@ export default function PersonalCardModal({
 }: PersonalCardModalProps) {
   const formattedNumber = user?.number.match(/.{1,4}/g)?.join(" ") ?? "";
 
-  console.log("user", user);
-
   return (
     <Modal
       animationType="fade"

@@ -46,12 +46,16 @@ export default function LoginScreen() {
     return value;
   };
 
-  function successLogin(string: string) {
+  async function successLogin(string: string) {
     Toast.show({
       type: "success",
       text1: `Login efetuado para ${string}`,
     });
 
+    // Pequeno delay para garantir que tokens estão salvos no SecureStore
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    console.log("[LOGIN] Redirecionando para /(main)...");
     router.replace("/(main)");
   }
 
@@ -79,8 +83,8 @@ export default function LoginScreen() {
           text1: "Termos aceitos com sucesso!",
         });
         setShowTermsModal(false);
-        setTokens();
-        successLogin(userName);
+        await setTokens();
+        await successLogin(userName);
       } else {
         Toast.show({
           type: "error",
@@ -99,10 +103,20 @@ export default function LoginScreen() {
     }
   }
 
-  async function setTokens() {
-    if (!!userToken && userId) {
-      await SecureStore.setItemAsync("user-token", userToken);
-      await SecureStore.setItemAsync("user-id", String(userId));
+  async function setTokens(token?: string, id?: number) {
+    const tokenToSave = token || userToken;
+    const idToSave = id || userId;
+
+    if (!!tokenToSave && idToSave) {
+      console.log("[LOGIN] Salvando tokens no SecureStore...");
+      await SecureStore.setItemAsync("user-token", tokenToSave);
+      await SecureStore.setItemAsync("user-id", String(idToSave));
+      console.log("[LOGIN] Tokens salvos com sucesso");
+    } else {
+      console.warn("[LOGIN] Tentativa de salvar tokens sem dados:", {
+        tokenToSave: !!tokenToSave,
+        idToSave
+      });
     }
   }
 
@@ -122,19 +136,14 @@ export default function LoginScreen() {
           if (res.pushToken) {
             await SecureStore.setItemAsync("expo-push-token", res.pushToken);
           }
-          console.log(
-            "res?.data?.user?.termo_uso_aceito",
-            res?.data?.user?.termo_uso_aceito
-          );
-
           if (
             !res?.data?.user?.termo_uso_aceito ||
             res?.data?.user?.termo_uso_aceito === 0
           ) {
             setShowTermsModal(true);
           } else {
-            setTokens();
-            successLogin(res?.data?.user?.nome || cpf);
+            await setTokens(res?.data.token, res?.data?.user?.id);
+            await successLogin(res?.data?.user?.nome || cpf);
           }
         } catch (error) {
           console.log("error", error);

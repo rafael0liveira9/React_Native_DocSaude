@@ -121,15 +121,7 @@ export async function handleLogin(cpf: string, password: string) {
 
     // Envia token para o backend se foi obtido com sucesso
     if (pushToken && pushToken !== "expo-go-mock-token") {
-      const tokenRegistered = await registerDeviceToken(pushToken, response.id);
-
-      if (tokenRegistered) {
-        console.log("Token FCM registrado no backend com sucesso");
-      } else {
-        console.warn(
-          "Falha ao registrar token no backend, mas login continuará"
-        );
-      }
+      await registerDeviceToken(pushToken, response.id);
     }
 
     return {

@@ -7,7 +7,9 @@ export interface RedeCredenciadaItem {
   situacao: string;
   endereco: string;
   bairro: string;
-  cidade_uf: string;
+  cidade: string;
+  uf: string;
+  cidade_uf?: string; // Campo legado, manter para compatibilidade
   telefone: string;
   site: string;
   horario_func_semana: string;
@@ -19,26 +21,57 @@ export interface RedeCredenciadaItem {
   dados_bancarios: string;
   forma_pagamento: string;
   periodicidade_repasse: string;
+  servico?: string;
+}
+
+export interface RedeCredenciadaFilters {
+  uf?: string;
+  cidade?: string;
+  servico?: string;
+  aberto?: string; // Campo livre de texto
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface FiltrosRedeCredenciada {
+  servicos: string[];
+  estados: {
+    uf: string;
+    cidades: string[];
+  }[];
 }
 
 /**
  * Buscar rede credenciada com filtros
  */
 export async function getRedeCredenciada(
-  search?: string,
-  cidade?: string,
-  page: number = 1,
-  limit: number = 50
+  filters: RedeCredenciadaFilters = {}
 ): Promise<{ rede: RedeCredenciadaItem[]; total: number } | null> {
   try {
-    const params: any = { page, limit };
+    const params: any = {
+      page: filters.page || 1,
+      limit: filters.limit || 50,
+    };
 
-    if (search) {
-      params.search = search;
+    if (filters.uf) {
+      params.uf = filters.uf;
     }
 
-    if (cidade) {
-      params.cidade = cidade;
+    if (filters.cidade) {
+      params.cidade = filters.cidade;
+    }
+
+    if (filters.servico) {
+      params.servico = filters.servico;
+    }
+
+    if (filters.aberto) {
+      params.aberto = filters.aberto;
+    }
+
+    if (filters.search) {
+      params.search = filters.search;
     }
 
     const response = await api.get('/rede-credenciada', { params });
@@ -57,24 +90,24 @@ export async function getRedeCredenciada(
 }
 
 /**
- * Buscar todas as cidades da rede credenciada (para filtros)
+ * Buscar filtros disponíveis (serviços, estados e cidades)
+ * da nova rota /rede-credenciada/filtros
  */
-export async function getCidadesRedeCredenciada(): Promise<string[]> {
+export async function getFiltrosRedeCredenciada(): Promise<FiltrosRedeCredenciada | null> {
   try {
-    const response = await api.get('/rede-credenciada', { params: { limit: 1000 } });
+    console.log('[API] Buscando filtros da rede credenciada...');
+    const response = await api.get('/rede-credenciada/filtros');
 
     if (response.data.success) {
-      const cidades = new Set<string>();
-      response.data.data.rede.forEach((item: RedeCredenciadaItem) => {
-        if (item.cidade_uf) {
-          cidades.add(item.cidade_uf);
-        }
+      console.log('[API] Filtros recebidos:', {
+        servicos: response.data.data.servicos.length,
+        estados: response.data.data.estados.length,
       });
-      return Array.from(cidades).sort();
+      return response.data.data;
     }
-    return [];
+    return null;
   } catch (error: any) {
-    console.error('Erro ao buscar cidades:', error.response?.data || error.message);
-    return [];
+    console.error('Erro ao buscar filtros:', error.response?.data || error.message);
+    return null;
   }
 }

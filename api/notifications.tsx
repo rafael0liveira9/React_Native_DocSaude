@@ -22,15 +22,19 @@ export async function registerDeviceToken(
       userId,
     };
 
-    const response = await api.post("/notifications/register-token", deviceInfo);
+    // TODO: Rota do backend ainda não existe
+    // const response = await api.post("/notifications/register-token", deviceInfo);
 
-    if (response.data.success) {
-      console.log("Token registrado no backend com sucesso");
-      return true;
-    }
+    // if (response.data.success) {
+    //   console.log("Token registrado no backend com sucesso");
+    //   return true;
+    // }
 
-    console.warn("Falha ao registrar token:", response.data);
-    return false;
+    // console.warn("Falha ao registrar token:", response.data);
+    // return false;
+
+    console.log("Token de notificação gerado (aguardando rota do backend):", token);
+    return true;
   } catch (error: any) {
     console.error(
       "Erro ao registrar token no backend:",
@@ -48,17 +52,21 @@ export async function deleteDeviceTokenFromBackend(
   token: string
 ): Promise<boolean> {
   try {
-    const response = await api.delete("/notifications/delete-token", {
-      data: { token },
-    });
+    // TODO: Rota do backend ainda não existe
+    // const response = await api.delete("/notifications/delete-token", {
+    //   data: { token },
+    // });
 
-    if (response.data.success) {
-      console.log("Token deletado do backend com sucesso");
-      return true;
-    }
+    // if (response.data.success) {
+    //   console.log("Token deletado do backend com sucesso");
+    //   return true;
+    // }
 
-    console.warn("Falha ao deletar token:", response.data);
-    return false;
+    // console.warn("Falha ao deletar token:", response.data);
+    // return false;
+
+    console.log("Token de notificação deletado (aguardando rota do backend):", token);
+    return true;
   } catch (error: any) {
     console.error(
       "Erro ao deletar token do backend:",

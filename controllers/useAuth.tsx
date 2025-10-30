@@ -13,12 +13,14 @@ export function useAuth() {
     async function fetchUser() {
       try {
         const token = await SecureStore.getItemAsync("user-token");
-        if (!token) {
+        const userId = await SecureStore.getItemAsync("user-id");
+
+        if (!token || !userId) {
           router.replace("/(auth)");
           return;
         }
 
-        const userData = await GetMyData(token);
+        const userData = await GetMyData(Number(userId), token);
         if (!!userData?.id) {
           setUser(userData);
         } else {

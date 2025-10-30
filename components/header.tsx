@@ -1,14 +1,13 @@
+import { deleteDeviceToken } from "@/api/firebase";
+import { deleteDeviceTokenFromBackend } from "@/api/notifications";
 import { Colors } from "@/constants/Colors";
 import { globalStyles } from "@/styles/global";
-import { styles } from "@/styles/header";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useState } from "react";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { Image, TouchableOpacity, View } from "react-native";
 import { LogoutModal } from "./fragments/modalLogout";
-import { deleteDeviceToken } from "@/api/firebase";
-import { deleteDeviceTokenFromBackend } from "@/api/notifications";
 
 export default function Header({ notify }: any) {
   const themeColors = Colors["dark"];
@@ -77,7 +76,7 @@ export default function Header({ notify }: any) {
       <View
         style={[globalStyles.flexr, { gap: 30, justifyContent: "flex-end" }]}
       >
-        <TouchableOpacity style={styles.notifyIconBox}>
+        {/* <TouchableOpacity style={styles.notifyIconBox}>
           {notify.length > 0 && (
             <View
               style={[
@@ -96,7 +95,7 @@ export default function Header({ notify }: any) {
             size={30}
             color={themeColors.backgroundSecondary}
           />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity onPress={() => setIsLogoutModalOpen(true)}>
           <FontAwesome5
             name="user"

@@ -1,5 +1,5 @@
 import { Picker } from "@react-native-picker/picker";
-import { Platform, View } from "react-native";
+import { Platform, Text, TextInput, View } from "react-native";
 
 export default function AcredidetFilters({
   ufs,
@@ -12,6 +12,8 @@ export default function AcredidetFilters({
   setSelectedSpeciality,
   specialities,
   themeColors,
+  openNowText,
+  setOpenNowText,
 }: any) {
   const pickerStyle =
     Platform.OS === "ios"
@@ -34,7 +36,10 @@ export default function AcredidetFilters({
       >
         <Picker
           selectedValue={selectedUF}
-          onValueChange={(value) => setSelectedUF(value)}
+          onValueChange={(value) => {
+            setSelectedCity("");
+            setSelectedUF(value);
+          }}
           style={pickerStyle}
           itemStyle={{ height: 60, fontSize: 16, color: "#000" }}
           dropdownIconColor={"#000"}
@@ -96,6 +101,43 @@ export default function AcredidetFilters({
           ))}
         </Picker>
       </View>
+
+      {/* Filtro "Aberto" - Campo de texto livre */}
+      {setOpenNowText && (
+        <View
+          style={{
+            marginBottom: 10,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 14,
+              fontWeight: "600",
+              color: themeColors.text || "#000",
+              marginBottom: 6,
+            }}
+          >
+            Filtrar por horário
+          </Text>
+          <TextInput
+            placeholder="Ex: Segunda a Sexta, 08h às 18h"
+            placeholderTextColor="#999"
+            value={openNowText}
+            onChangeText={setOpenNowText}
+            style={{
+              borderColor: themeColors.black,
+              borderWidth: 2,
+              borderRadius: 12,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+              backgroundColor: themeColors.white || "#FFF",
+              color: themeColors.black || "#000",
+              fontSize: 16,
+              height: 60,
+            }}
+          />
+        </View>
+      )}
     </View>
   );
 }
