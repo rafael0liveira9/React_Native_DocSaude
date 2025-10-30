@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(npx expo prebuild:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(eas --version:*)",
+      "Bash(chmod:*)",
+      "Bash(./scripts/fix-podfile.sh:*)"
     ],
     "deny": [],
     "ask": []

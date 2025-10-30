@@ -22,10 +22,12 @@
           }
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "./plugins/withModularHeaders.js"
     ],
     "ios": {
       "bundleIdentifier": "com.totaldocsaude.expo.ios",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "usesAppleSignIn": true,
       "supportsTablet": true,
       "infoPlist": {

@@ -6,22 +6,13 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "ios": {
-        "prebuildCommand": "node scripts/fix-podfile.js"
-      }
+      "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal",
-      "ios": {
-        "prebuildCommand": "node scripts/fix-podfile.js"
-      }
+      "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true,
-      "ios": {
-        "prebuildCommand": "node scripts/fix-podfile.js"
-      }
+      "autoIncrement": true
     }
   },
   "submit": {
