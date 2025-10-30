@@ -27,7 +27,10 @@
     "ios": {
       "bundleIdentifier": "com.totaldocsaude.expo.ios",
       "usesAppleSignIn": true,
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.totaldocsaude.expo",
