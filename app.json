@@ -4,7 +4,7 @@
     "slug": "totaldocsaude",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/icone/icone.png",
     "scheme": "totaldocsaude",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -34,9 +34,9 @@
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "foregroundImage": "./assets/icone/icone.png",
+        "backgroundImage": "./assets/icone/icone.png",
+        "monochromeImage": "./assets/icone/icone.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
