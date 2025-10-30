@@ -7,6 +7,8 @@ import * as SecureStore from "expo-secure-store";
 import { useState } from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { LogoutModal } from "./fragments/modalLogout";
+import { deleteDeviceToken } from "@/api/firebase";
+import { deleteDeviceTokenFromBackend } from "@/api/notifications";
 
 export default function Header({ notify }: any) {
   const themeColors = Colors["dark"];
@@ -16,6 +18,19 @@ export default function Header({ notify }: any) {
   async function Logout() {
     try {
       setIsLoading(true);
+
+      // Pega o token FCM antes de deletar do storage
+      const pushToken = await SecureStore.getItemAsync("expo-push-token");
+
+      // Deleta o token do backend primeiro
+      if (pushToken && pushToken !== "expo-go-mock-token") {
+        await deleteDeviceTokenFromBackend(pushToken);
+      }
+
+      // Deleta o token do Firebase
+      await deleteDeviceToken();
+
+      // Limpa o storage
       const keysToDelete = ["user-token", "expo-push-token"];
       await Promise.all(
         keysToDelete.map((key) => SecureStore.deleteItemAsync(key))
@@ -24,7 +39,7 @@ export default function Header({ notify }: any) {
       setIsLoading(false);
       router.replace("/(auth)");
     } catch (error) {
-      console.error("Erro ao limpar SecureStore:", error);
+      console.error("Erro ao fazer logout:", error);
       setIsLoading(false);
     }
   }

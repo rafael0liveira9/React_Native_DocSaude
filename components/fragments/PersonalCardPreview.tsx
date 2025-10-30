@@ -45,12 +45,38 @@ export default function PersonalCardCarousel({
           ]}
         >
           <View>
-            <Text style={[styles.cardPreviewText, { fontSize: 16, fontWeight: '700' }]}>{item.name}</Text>
+            <Text
+              style={[
+                styles.cardPreviewText,
+                { fontSize: 16, fontWeight: "700" },
+              ]}
+            >
+              {item.name}
+            </Text>
             {item.companyName && (
-              <Text style={[styles.cardPreviewText, { fontSize: 12, fontWeight: '600', opacity: 0.8, marginTop: 2 }]}>{item.companyName}</Text>
+              <Text
+                style={[
+                  styles.cardPreviewText,
+                  {
+                    fontSize: 12,
+                    fontWeight: "600",
+                    opacity: 0.8,
+                    marginTop: 2,
+                  },
+                ]}
+              >
+                {item.companyName}
+              </Text>
             )}
           </View>
-          <Text style={[styles.cardPreviewText, { fontSize: 18, fontWeight: '700', letterSpacing: 1 }]}>{formattedNumber}</Text>
+          <Text
+            style={[
+              styles.cardPreviewText,
+              { fontSize: 18, fontWeight: "700", letterSpacing: 1 },
+            ]}
+          >
+            {formattedNumber}
+          </Text>
           <View
             style={[
               globalStyles.flexc,
@@ -61,8 +87,15 @@ export default function PersonalCardCarousel({
               },
             ]}
           >
-            <Text style={{ fontSize: 10, fontWeight: '600', opacity: 0.7 }}>VALIDADE</Text>
-            <Text style={[styles.cardPreviewText, { fontSize: 14, fontWeight: '600' }]}>
+            <Text style={{ fontSize: 10, fontWeight: "600", opacity: 0.7 }}>
+              VALIDADE
+            </Text>
+            <Text
+              style={[
+                styles.cardPreviewText,
+                { fontSize: 14, fontWeight: "600" },
+              ]}
+            >
               {formatDate(item.validAt)}
             </Text>
           </View>
@@ -95,7 +128,15 @@ export default function PersonalCardCarousel({
             >
               <AntDesign name="eye" size={24} color={themeColors.background} />
             </View>
-            <Text style={{ color: themeColors.background, fontWeight: "600", fontSize: 12, textAlign: 'center', lineHeight: 14 }}>
+            <Text
+              style={{
+                color: themeColors.background,
+                fontWeight: "600",
+                fontSize: 12,
+                textAlign: "center",
+                lineHeight: 14,
+              }}
+            >
               Ver dados do cartão
             </Text>
           </Pressable>
@@ -127,7 +168,7 @@ export default function PersonalCardCarousel({
         contentContainerStyle={{
           gap: GAP,
           paddingBottom: 0,
-          alignItems: 'center',
+          alignItems: "center",
         }}
       />
 

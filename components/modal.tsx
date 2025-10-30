@@ -28,6 +28,8 @@ export default function PersonalCardModal({
 }: PersonalCardModalProps) {
   const formattedNumber = user?.number.match(/.{1,4}/g)?.join(" ") ?? "";
 
+  console.log("user", user);
+
   return (
     <Modal
       animationType="fade"
@@ -66,7 +68,12 @@ export default function PersonalCardModal({
                   { justifyContent: "space-around", alignItems: "flex-start" },
                 ]}
               >
-                <Text style={[stylesInside.cardPreviewText, { fontSize: 20, fontWeight: '700' }]}>
+                <Text
+                  style={[
+                    stylesInside.cardPreviewText,
+                    { fontSize: 20, fontWeight: "700" },
+                  ]}
+                >
                   {user?.name}
                 </Text>
                 <View style={[globalStyles.flexr, { gap: 40 }]}>
@@ -80,7 +87,11 @@ export default function PersonalCardModal({
                       },
                     ]}
                   >
-                    <Text style={{ fontSize: 10, fontWeight: '600', opacity: 0.7 }}>NASCIMENTO</Text>
+                    <Text
+                      style={{ fontSize: 10, fontWeight: "600", opacity: 0.7 }}
+                    >
+                      NASCIMENTO
+                    </Text>
                     <Text style={stylesInside.cardPreviewText}>
                       {formatDate(user?.birthDate)}
                     </Text>
@@ -95,7 +106,11 @@ export default function PersonalCardModal({
                       },
                     ]}
                   >
-                    <Text style={{ fontSize: 10, fontWeight: '600', opacity: 0.7 }}>CPF</Text>
+                    <Text
+                      style={{ fontSize: 10, fontWeight: "600", opacity: 0.7 }}
+                    >
+                      CPF
+                    </Text>
                     <Text style={stylesInside.cardPreviewText}>
                       {user?.document}
                     </Text>
@@ -123,7 +138,11 @@ export default function PersonalCardModal({
                     },
                   ]}
                 >
-                  <Text style={{ fontSize: 10, fontWeight: '600', opacity: 0.7 }}>NÚMERO DA CARTEIRINHA</Text>
+                  <Text
+                    style={{ fontSize: 10, fontWeight: "600", opacity: 0.7 }}
+                  >
+                    NÚMERO DA CARTEIRINHA
+                  </Text>
                   <Text style={stylesInside.cardPreviewText}>
                     {formattedNumber}
                   </Text>
@@ -139,7 +158,11 @@ export default function PersonalCardModal({
                       },
                     ]}
                   >
-                    <Text style={{ fontSize: 10, fontWeight: '600', opacity: 0.7 }}>ATIVAÇÃO</Text>
+                    <Text
+                      style={{ fontSize: 10, fontWeight: "600", opacity: 0.7 }}
+                    >
+                      ATIVAÇÃO
+                    </Text>
                     <Text style={stylesInside.cardPreviewText}>
                       {formatDate(user?.activationAt)}
                     </Text>
@@ -154,7 +177,11 @@ export default function PersonalCardModal({
                       },
                     ]}
                   >
-                    <Text style={{ fontSize: 10, fontWeight: '600', opacity: 0.7 }}>VALIDADE</Text>
+                    <Text
+                      style={{ fontSize: 10, fontWeight: "600", opacity: 0.7 }}
+                    >
+                      VALIDADE
+                    </Text>
                     <Text style={stylesInside.cardPreviewText}>
                       {formatDate(user?.validAt)}
                     </Text>
@@ -178,9 +205,13 @@ export default function PersonalCardModal({
                     },
                   ]}
                 >
-                  <Text style={{ fontSize: 10, fontWeight: '600', opacity: 0.7 }}>NOME DA EMPRESA</Text>
+                  <Text
+                    style={{ fontSize: 10, fontWeight: "600", opacity: 0.7 }}
+                  >
+                    {user?.type === "PF" ? `NOME DO PLANO` : `NOME DA EMPRESA`}
+                  </Text>
                   <Text style={stylesInside.cardPreviewText}>
-                    {user?.companyName}
+                    {user?.type === "PF" ? user?.typeName : user?.companyName}
                   </Text>
                 </View>
               </View>
@@ -218,9 +249,9 @@ export default function PersonalCardModal({
                 <Text
                   style={{
                     color: themeColors.background,
-                    fontWeight: '600',
+                    fontWeight: "600",
                     fontSize: 14,
-                    textAlign: 'center',
+                    textAlign: "center",
                   }}
                 >
                   Fechar cartão

@@ -1,4 +1,13 @@
-import { registerForPushNotificationsAsync } from "@/api/firebase";
+import {
+  initializeNotificationListeners,
+  setTokenRefreshHandler,
+  setNotificationReceivedHandler,
+  setNotificationTappedHandler,
+} from "@/api/firebase";
+import {
+  registerDeviceToken,
+  updateDeviceToken,
+} from "@/api/notifications";
 import { Colors } from "@/constants/Colors";
 import { DocSaudeContainer } from "@/controllers/context"; // 👈 importa o provider
 import SplashScreen from "@/view/splashScreen";
@@ -27,16 +36,51 @@ export default function RootLayout() {
     }
   }
 
-  async function FirebaseToken() {
-    try {
-      const expoPushToken = await registerForPushNotificationsAsync();
-    } catch (error) {
-      console.log("Firebase token registration skipped (Expo Go mode)");
-    }
-  }
-
+  // Inicializa os listeners de notificações
   useEffect(() => {
-    FirebaseToken();
+    // Configura handler para quando token é atualizado
+    setTokenRefreshHandler(async (newToken) => {
+      console.log("Token FCM atualizado, enviando para backend...");
+
+      // Pega o token antigo do storage
+      const oldToken = await SecureStore.getItemAsync("expo-push-token");
+
+      // Atualiza no backend
+      await updateDeviceToken(newToken, oldToken || undefined);
+
+      // Salva o novo token no storage
+      await SecureStore.setItemAsync("expo-push-token", newToken);
+    });
+
+    // Configura handler para notificações recebidas em foreground
+    setNotificationReceivedHandler((notification) => {
+      console.log("Notificação recebida em foreground:", notification);
+
+      // Exibe toast para o usuário
+      Toast.show({
+        type: "info",
+        text1: notification.notification?.title || "Nova notificação",
+        text2: notification.notification?.body || "",
+        visibilityTime: 4000,
+        autoHide: true,
+      });
+    });
+
+    // Configura handler para quando usuário toca na notificação
+    setNotificationTappedHandler((notification) => {
+      console.log("Usuário tocou na notificação:", notification);
+
+      // Aqui você pode navegar para uma tela específica baseado nos dados da notificação
+      // Exemplo: if (notification.data?.screen) { router.push(notification.data.screen); }
+    });
+
+    // Inicializa os listeners
+    const cleanup = initializeNotificationListeners();
+
+    // Cleanup quando componente desmontar
+    return () => {
+      if (cleanup) cleanup();
+    };
   }, []);
 
   useEffect(() => {

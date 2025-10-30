@@ -1,11 +1,12 @@
 import { handleLogin, TermsAccept } from "@/api/auth";
-import { Colors } from "@/constants/Colors";
+import { getTermosDeUso } from "@/api/termsOfUse";
 import { TermsOfUseModal } from "@/components/fragments/modalTermsOfUse";
+import { Colors } from "@/constants/Colors";
 import { styles } from "@/styles/auth";
 import { globalStyles } from "@/styles/global";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Image,
   Keyboard,
@@ -23,11 +24,13 @@ export default function LoginScreen() {
   const themeColors = Colors["dark"],
     router = useRouter();
   const [isLoading, setIsLoading] = useState<boolean>(false),
+    [termsOfUse, setTermsOfUse] = useState<string>(""),
     [cpf, setCpf] = useState<string>(""),
     [password, setPassword] = useState<string>(""),
     [textError, setTexterror] = useState<string>(""),
     [showTermsModal, setShowTermsModal] = useState<boolean>(false),
     [userToken, setUserToken] = useState<string>(""),
+    [userId, setUserId] = useState<any>(null),
     [userName, setUserName] = useState<string>("");
 
   // Formatar CPF
@@ -52,8 +55,21 @@ export default function LoginScreen() {
     router.replace("/(main)");
   }
 
-  async function handleAcceptTerms() {
+  async function getTerms() {
     setIsLoading(true);
+    try {
+      const response = await getTermosDeUso();
+      if (response) {
+        setTermsOfUse(response);
+      }
+    } catch (error) {
+      console.log("Erro ao pegar termos:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleAcceptTerms() {
     try {
       const response = await TermsAccept(userToken);
 
@@ -63,6 +79,7 @@ export default function LoginScreen() {
           text1: "Termos aceitos com sucesso!",
         });
         setShowTermsModal(false);
+        setTokens();
         successLogin(userName);
       } else {
         Toast.show({
@@ -71,6 +88,7 @@ export default function LoginScreen() {
         });
       }
     } catch (error) {
+      setShowTermsModal(false);
       console.log("Erro ao aceitar termos:", error);
       Toast.show({
         type: "error",
@@ -78,6 +96,13 @@ export default function LoginScreen() {
       });
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function setTokens() {
+    if (!!userToken && userId) {
+      await SecureStore.setItemAsync("user-token", userToken);
+      await SecureStore.setItemAsync("user-id", String(userId));
     }
   }
 
@@ -90,24 +115,25 @@ export default function LoginScreen() {
 
       if (res?.data?.token) {
         try {
-          await SecureStore.setItemAsync("user-token", res?.data.token);
-          await SecureStore.setItemAsync("user-id", String(res?.data?.user?.id));
+          setUserToken(res?.data.token);
+          setUserName(res?.data?.user?.nome || cpf);
+          setUserId(res?.data?.user?.id);
 
           if (res.pushToken) {
             await SecureStore.setItemAsync("expo-push-token", res.pushToken);
           }
+          console.log(
+            "res?.data?.user?.termo_uso_aceito",
+            res?.data?.user?.termo_uso_aceito
+          );
 
-          // Verifica se o usuário NÃO aceitou os termos
           if (
             !res?.data?.user?.termo_uso_aceito ||
             res?.data?.user?.termo_uso_aceito === 0
           ) {
-            // Usuário não aceitou os termos - abre modal
-            setUserToken(res?.data.token);
-            setUserName(res?.data?.user?.nome || cpf);
             setShowTermsModal(true);
           } else {
-            // Usuário já aceitou os termos - faz login normal
+            setTokens();
             successLogin(res?.data?.user?.nome || cpf);
           }
         } catch (error) {
@@ -131,6 +157,10 @@ export default function LoginScreen() {
       });
     }
   }
+
+  useEffect(() => {
+    getTerms();
+  }, []);
 
   return (
     <KeyboardAvoidingView
@@ -243,6 +273,7 @@ export default function LoginScreen() {
             text1: "Você precisa aceitar os termos para continuar.",
           });
         }}
+        termsOfUse={termsOfUse}
       />
     </KeyboardAvoidingView>
   );

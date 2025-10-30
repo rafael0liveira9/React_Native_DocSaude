@@ -41,7 +41,6 @@ export default function HomeScreen() {
         const data = await GetMyData(Number(userId), token);
         if (data) {
           setUser(data);
-
           buildCardsArray(data);
         } else {
           console.log("Não foi possível carregar os dados do usuário");
@@ -66,6 +65,8 @@ export default function HomeScreen() {
       birthDate: userData.birthDate,
       activationAt: userData.activationAt || new Date().toISOString(),
       validAt: userData.validAt || new Date().toISOString(),
+      type: userData.type,
+      typeName: userData.typeName,
       companyName: userData.companyName,
       isTitular: true,
     });
@@ -88,6 +89,8 @@ export default function HomeScreen() {
             dependente.data_validade ||
             dependente.validAt ||
             new Date().toISOString(),
+          type: userData.type,
+          typeName: userData.typeName,
           companyName: userData.companyName,
           isTitular: false,
         });
@@ -110,10 +113,20 @@ export default function HomeScreen() {
   }
 
   function handleCustomAction(action: string) {
-    if (action === "callSupport") {
-      setIsSupportModalOpen(true);
-    } else if (action === "openManual") {
-      handleOpenManual();
+    switch (action) {
+      case "callSupport":
+        setIsSupportModalOpen(true);
+        break;
+
+      case "openManual":
+        handleOpenManual();
+        break;
+      case "callWhatsapp":
+        handleCallWhatsapp();
+        break;
+
+      default:
+        break;
     }
   }
 
@@ -121,6 +134,16 @@ export default function HomeScreen() {
     const phoneNumber = "080008889633";
     Linking.openURL(`tel:${phoneNumber}`);
     setIsSupportModalOpen(false);
+  }
+
+  function handleCallWhatsapp() {
+    const whatsNumber = "5541988413030";
+    const message = "Preciso de atendimento Total Doc Saude";
+    const url = `https://wa.me/${whatsNumber}?text=${encodeURIComponent(
+      message
+    )}`;
+
+    return Linking.openURL(url);
   }
 
   async function handleOpenManual() {

@@ -19,6 +19,134 @@ if (!isExpoGo) {
   }
 }
 
+// Tipos para callbacks de notificações
+export type NotificationHandler = (notification: any) => void;
+export type TokenRefreshHandler = (token: string) => void;
+
+// Callbacks globais para notificações
+let onNotificationReceivedCallback: NotificationHandler | null = null;
+let onNotificationTappedCallback: NotificationHandler | null = null;
+let onTokenRefreshCallback: TokenRefreshHandler | null = null;
+
+/**
+ * Configura o callback para notificações recebidas em foreground
+ */
+export function setNotificationReceivedHandler(handler: NotificationHandler) {
+  onNotificationReceivedCallback = handler;
+}
+
+/**
+ * Configura o callback para quando usuário toca na notificação
+ */
+export function setNotificationTappedHandler(handler: NotificationHandler) {
+  onNotificationTappedCallback = handler;
+}
+
+/**
+ * Configura o callback para quando o token é atualizado
+ */
+export function setTokenRefreshHandler(handler: TokenRefreshHandler) {
+  onTokenRefreshCallback = handler;
+}
+
+/**
+ * Inicializa os listeners de notificações do Firebase
+ * Deve ser chamado uma única vez no início do app
+ */
+export function initializeNotificationListeners() {
+  if (!messaging) {
+    console.log("[MOCK] Listeners de notificação inicializados (Expo Go mode)");
+    return;
+  }
+
+  // Handler para mensagens em foreground (app aberto)
+  const unsubscribeForeground = messaging().onMessage(async (remoteMessage: any) => {
+    console.log("Notificação recebida em foreground:", remoteMessage);
+
+    if (onNotificationReceivedCallback) {
+      onNotificationReceivedCallback(remoteMessage);
+    }
+
+    // Log evento no analytics
+    await logEvent("notification_received_foreground", {
+      notification_id: remoteMessage.messageId,
+      notification_title: remoteMessage.notification?.title,
+    });
+  });
+
+  // Handler para quando usuário toca em notificação (app em background ou fechado)
+  const unsubscribeNotificationOpened = messaging().onNotificationOpenedApp(
+    async (remoteMessage: any) => {
+      console.log("Notificação aberta pelo usuário:", remoteMessage);
+
+      if (onNotificationTappedCallback) {
+        onNotificationTappedCallback(remoteMessage);
+      }
+
+      // Log evento no analytics
+      await logEvent("notification_tapped", {
+        notification_id: remoteMessage.messageId,
+        notification_title: remoteMessage.notification?.title,
+      });
+    }
+  );
+
+  // Verificar se o app foi aberto via notificação (app estava completamente fechado)
+  messaging()
+    .getInitialNotification()
+    .then(async (remoteMessage: any) => {
+      if (remoteMessage) {
+        console.log("App aberto via notificação:", remoteMessage);
+
+        if (onNotificationTappedCallback) {
+          onNotificationTappedCallback(remoteMessage);
+        }
+
+        // Log evento no analytics
+        await logEvent("notification_opened_app", {
+          notification_id: remoteMessage.messageId,
+          notification_title: remoteMessage.notification?.title,
+        });
+      }
+    });
+
+  // Handler para refresh de token
+  const unsubscribeTokenRefresh = messaging().onTokenRefresh(async (newToken: string) => {
+    console.log("Token FCM atualizado:", newToken);
+
+    if (onTokenRefreshCallback) {
+      onTokenRefreshCallback(newToken);
+    }
+
+    // Log evento no analytics
+    await logEvent("fcm_token_refreshed", {
+      token_length: newToken.length,
+    });
+  });
+
+  console.log("Listeners de notificação inicializados com sucesso");
+
+  // Retorna função de cleanup para desinscrever listeners
+  return () => {
+    unsubscribeForeground();
+    unsubscribeNotificationOpened();
+    unsubscribeTokenRefresh();
+  };
+}
+
+// Handler de background (deve ser registrado fora do componente)
+if (!isExpoGo && messaging) {
+  messaging().setBackgroundMessageHandler(async (remoteMessage: any) => {
+    console.log("Mensagem recebida em background:", remoteMessage);
+
+    // Aqui você pode processar a notificação em background
+    // Não pode atualizar UI aqui, apenas processar dados
+
+    // Log no crashlytics para debug
+    logCrash(`Background notification: ${remoteMessage.messageId}`);
+  });
+}
+
 /**
  * Log de eventos no Firebase Analytics
  */
@@ -120,5 +248,29 @@ export async function unsubscribeFromTopic(topic: string) {
     await messaging().unsubscribeFromTopic(topic);
   } catch (error) {
     console.error(`Erro ao desinscrever do tópico ${topic}:`, error);
+  }
+}
+
+/**
+ * Deleta o token FCM do dispositivo
+ * Deve ser chamado quando o usuário faz logout
+ */
+export async function deleteDeviceToken(): Promise<boolean> {
+  if (!messaging) {
+    console.log("[MOCK] Token deletado (Expo Go mode)");
+    return true;
+  }
+
+  try {
+    await messaging().deleteToken();
+    console.log("Token FCM deletado com sucesso");
+
+    await logEvent("fcm_token_deleted");
+
+    return true;
+  } catch (error) {
+    console.error("Erro ao deletar token FCM:", error);
+    logCrash(error as Error);
+    return false;
   }
 }

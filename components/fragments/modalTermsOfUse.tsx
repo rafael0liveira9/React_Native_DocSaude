@@ -3,13 +3,16 @@ import {
   ActivityIndicator,
   Dimensions,
   GestureResponderEvent,
+  Linking,
   Modal,
   ScrollView,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
   ViewProps,
 } from "react-native";
+import RenderHtml from "react-native-render-html";
 
 interface TermsOfUseModalProps extends ViewProps {
   visible?: boolean;
@@ -20,6 +23,7 @@ interface TermsOfUseModalProps extends ViewProps {
   onConfirm?: (e: GestureResponderEvent) => void;
   onCancel?: () => void;
   close: () => void;
+  termsOfUse?: any;
 }
 
 const { height } = Dimensions.get("window");
@@ -33,7 +37,10 @@ export function TermsOfUseModal({
   onCancel,
   close,
   isLoading,
+  termsOfUse,
 }: TermsOfUseModalProps) {
+  const { width } = useWindowDimensions();
+
   return (
     <Modal
       visible={visible}
@@ -41,7 +48,6 @@ export function TermsOfUseModal({
       transparent={true}
       onRequestClose={close}
     >
-      {/* Fundo escuro translúcido */}
       <View
         style={{
           flex: 1,
@@ -51,7 +57,6 @@ export function TermsOfUseModal({
           paddingHorizontal: "2.5%",
         }}
       >
-        {/* Conteúdo do modal */}
         <View
           style={{
             backgroundColor: themeColors?.white || "#fff",
@@ -67,7 +72,6 @@ export function TermsOfUseModal({
             justifyContent: "space-between",
           }}
         >
-          {/* Título */}
           <Text
             style={{
               color: themeColors?.black || "#333",
@@ -80,7 +84,6 @@ export function TermsOfUseModal({
             {text}
           </Text>
 
-          {/* Conteúdo dos termos com scroll */}
           <ScrollView
             style={{
               flex: 1,
@@ -88,90 +91,27 @@ export function TermsOfUseModal({
             }}
             showsVerticalScrollIndicator={true}
           >
-            <Text
-              style={{
-                color: themeColors?.black || "#333",
-                fontSize: 14,
-                lineHeight: 22,
-                textAlign: "justify",
-              }}
-            >
-              <Text style={{ fontWeight: "bold" }}>
-                1. Aceitação dos Termos{"\n\n"}
-              </Text>
-              Ao utilizar nossos serviços, você concorda com estes Termos de
-              Uso. Se você não concordar com qualquer parte destes termos, não
-              utilize nossos serviços.{"\n\n"}
-              <Text style={{ fontWeight: "bold" }}>
-                2. Uso dos Serviços{"\n\n"}
-              </Text>
-              Nossos serviços são fornecidos para auxiliar no acesso a
-              informações de saúde e agendamento de consultas. Você concorda em
-              utilizar os serviços apenas para fins legítimos e de acordo com
-              todas as leis aplicáveis.{"\n\n"}
-              <Text style={{ fontWeight: "bold" }}>
-                3. Privacidade e Proteção de Dados{"\n\n"}
-              </Text>
-              Respeitamos sua privacidade e protegemos seus dados pessoais de
-              acordo com a Lei Geral de Proteção de Dados (LGPD). Suas
-              informações serão utilizadas apenas para os fins relacionados aos
-              nossos serviços de saúde.{"\n\n"}
-              <Text style={{ fontWeight: "bold" }}>
-                4. Responsabilidades do Usuário{"\n\n"}
-              </Text>
-              Você é responsável por:
-              {"\n"}- Manter a confidencialidade de suas credenciais de acesso
-              {"\n"}- Fornecer informações precisas e atualizadas
-              {"\n"}- Notificar-nos imediatamente sobre qualquer uso não
-              autorizado de sua conta
-              {"\n"}- Utilizar os serviços de forma ética e responsável{"\n\n"}
-              <Text style={{ fontWeight: "bold" }}>
-                5. Informações de Saúde{"\n\n"}
-              </Text>
-              As informações fornecidas através de nossos serviços têm caráter
-              informativo e não substituem consultas médicas presenciais. Sempre
-              consulte um profissional de saúde qualificado para diagnósticos e
-              tratamentos.{"\n\n"}
-              <Text style={{ fontWeight: "bold" }}>
-                6. Disponibilidade dos Serviços{"\n\n"}
-              </Text>
-              Embora nos esforcemos para manter nossos serviços disponíveis
-              continuamente, não garantimos que estarão livres de interrupções,
-              atrasos ou erros. Reservamo-nos o direito de modificar ou
-              descontinuar serviços a qualquer momento.{"\n\n"}
-              <Text style={{ fontWeight: "bold" }}>
-                7. Propriedade Intelectual{"\n\n"}
-              </Text>
-              Todo o conteúdo, incluindo textos, gráficos, logotipos e software,
-              é de propriedade exclusiva da empresa ou de seus licenciadores e
-              está protegido por leis de propriedade intelectual.{"\n\n"}
-              <Text style={{ fontWeight: "bold" }}>
-                8. Limitação de Responsabilidade{"\n\n"}
-              </Text>
-              Não nos responsabilizamos por danos indiretos, incidentais,
-              especiais ou consequenciais resultantes do uso ou da
-              impossibilidade de uso de nossos serviços.{"\n\n"}
-              <Text style={{ fontWeight: "bold" }}>
-                9. Modificações dos Termos{"\n\n"}
-              </Text>
-              Reservamo-nos o direito de modificar estes termos a qualquer
-              momento. As alterações entrarão em vigor imediatamente após a
-              publicação. O uso continuado dos serviços após as modificações
-              constitui aceitação dos novos termos.{"\n\n"}
-              <Text style={{ fontWeight: "bold" }}>10. Contato{"\n\n"}</Text>
-              Para dúvidas sobre estes Termos de Uso, entre em contato conosco
-              através dos canais de atendimento disponibilizados no aplicativo.
-              {"\n\n"}
-              <Text
-                style={{
-                  fontWeight: "bold",
-                  fontStyle: "italic",
-                  paddingBottom: 30,
+            <View style={{ padding: 16 }}>
+              <RenderHtml
+                contentWidth={width - 32} // considerar padding
+                source={{ html: termsOfUse.termo_uso }}
+                defaultTextProps={{ selectable: true }}
+                renderersProps={{
+                  a: {
+                    onPress: (_event: any, href: string) => {
+                      Linking.canOpenURL(href).then((supported) => {
+                        if (supported) Linking.openURL(href);
+                      });
+                    },
+                  },
                 }}
-              >
-                Última atualização: {new Date().toLocaleDateString("pt-BR")}
-              </Text>
-            </Text>
+                tagsStyles={{
+                  p: { marginBottom: 12, lineHeight: 20 },
+                  h1: { fontSize: 22, marginBottom: 8 },
+                  h2: { fontSize: 18, marginBottom: 8 },
+                }}
+              />
+            </View>
           </ScrollView>
 
           {/* Botões */}

@@ -21,7 +21,7 @@ export const menuItens = [
   {
     title: "Atendimento TotalDoc",
     icon: require("../assets/docsaude/icons/suport-icon.png"),
-    url: "/(stack)/example",
+    action: "callWhatsapp",
   },
   {
     title: "Suporte Técnico 24h",

@@ -1,6 +1,7 @@
 import Constants from "expo-constants";
 import api from "./config";
 import { registerForPushNotificationsAsync } from "./firebase";
+import { registerDeviceToken } from "./notifications";
 
 // Check if running in Expo Go (Firebase won't work in Expo Go)
 const isExpoGo = Constants.appOwnership === "expo";
@@ -70,7 +71,9 @@ export async function GetMyData(userId: number, token: string) {
         }`,
         city: userData.cidade,
         state: userData.estado,
-        companyName: userData.nome_empresa || userData.empresa || "",
+        type: userData.tipo_plano,
+        typeName: userData.nome_plano || "",
+        companyName: userData.empresa_nome || "",
         dependentes: userData.dependentes || [],
       };
       return formattedData;
@@ -113,7 +116,21 @@ export async function handleLogin(cpf: string, password: string) {
       console.log("[MOCK] Login success event logged");
     }
 
+    // Registra token de push notifications
     const pushToken = await registerForPushNotificationsAsync();
+
+    // Envia token para o backend se foi obtido com sucesso
+    if (pushToken && pushToken !== "expo-go-mock-token") {
+      const tokenRegistered = await registerDeviceToken(pushToken, response.id);
+
+      if (tokenRegistered) {
+        console.log("Token FCM registrado no backend com sucesso");
+      } else {
+        console.warn(
+          "Falha ao registrar token no backend, mas login continuará"
+        );
+      }
+    }
 
     return {
       data: response,
