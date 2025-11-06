@@ -125,31 +125,48 @@ export default function LoginScreen() {
       setTexterror("");
       setIsLoading(true);
       Keyboard.dismiss();
+
+      console.log("[LOGIN_SCREEN] Iniciando processo de login...");
       const res = await handleLogin(cpf, password);
+      console.log("[LOGIN_SCREEN] Resposta do handleLogin:", {
+        hasData: !!res?.data,
+        hasToken: !!res?.data?.token,
+        hasUser: !!res?.data?.user,
+      });
 
       if (res?.data?.token) {
         try {
+          console.log("[LOGIN_SCREEN] Token recebido, processando dados do usuário");
           setUserToken(res?.data.token);
           setUserName(res?.data?.user?.nome || cpf);
           setUserId(res?.data?.user?.id);
 
           if (res.pushToken) {
+            console.log("[LOGIN_SCREEN] Salvando push token");
             await SecureStore.setItemAsync("expo-push-token", res.pushToken);
           }
-          if (
-            !res?.data?.user?.termo_uso_aceito ||
-            res?.data?.user?.termo_uso_aceito === 0
-          ) {
+
+          const termoAceito = res?.data?.user?.termo_uso_aceito;
+          console.log("[LOGIN_SCREEN] Verificando termo de uso:", termoAceito);
+
+          if (!termoAceito || termoAceito === 0) {
+            console.log("[LOGIN_SCREEN] Termo não aceito, exibindo modal");
             setShowTermsModal(true);
           } else {
+            console.log("[LOGIN_SCREEN] Termo já aceito, salvando tokens e redirecionando");
             await setTokens(res?.data.token, res?.data?.user?.id);
             await successLogin(res?.data?.user?.nome || cpf);
           }
         } catch (error) {
-          console.log("error", error);
+          console.error("[LOGIN_SCREEN] Erro ao processar login:", error);
           setIsLoading(false);
+          Toast.show({
+            type: "error",
+            text1: "Erro ao processar login. Tente novamente.",
+          });
         }
       } else {
+        console.warn("[LOGIN_SCREEN] Login falhou: sem token na resposta");
         setTexterror("* CPF ou senha incorretos.");
         Toast.show({
           type: "error",
@@ -159,6 +176,7 @@ export default function LoginScreen() {
 
       setIsLoading(false);
     } else {
+      console.warn("[LOGIN_SCREEN] Campos vazios");
       setTexterror("* Preencha com CPF e senha para logar.");
       Toast.show({
         type: "error",

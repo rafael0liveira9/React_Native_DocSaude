@@ -6,7 +6,7 @@ export const menuItens = [
   {
     title: "Pronto Atendimento",
     icon: require("../assets/docsaude/icons/scope-icon.png"),
-    url: "/(stack)/example",
+    url: "/(stack)/telemedicina",
   },
   {
     title: "Farmácias",

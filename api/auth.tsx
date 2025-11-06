@@ -24,9 +24,19 @@ if (!isExpoGo) {
  */
 export async function Login(cpf: string, password: string) {
   try {
+    const cleanCpf = cpf.replace(/\D/g, "");
+    console.log("[API] Tentando login para CPF:", cleanCpf);
+
     const response = await api.post("/auth/login", {
-      cpf: cpf.replace(/\D/g, ""), // Remove formatação do CPF
+      cpf: cleanCpf,
       senha: password,
+    });
+
+    console.log("[API] Resposta recebida:", {
+      status: response.status,
+      success: response.data?.success,
+      hasToken: !!response.data?.data?.token,
+      hasUser: !!response.data?.data?.user,
     });
 
     if (response.data.success) {
@@ -37,9 +47,15 @@ export async function Login(cpf: string, password: string) {
         dependentes: response.data.data.dependentes || [],
       };
     }
+    console.warn("[API] Login falhou: success = false");
     return null;
   } catch (error: any) {
-    console.error("Erro no login:", error.response?.data || error.message);
+    console.error("[API] Erro no login:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      url: error.config?.url,
+    });
     return null;
   }
 }
@@ -93,9 +109,11 @@ export async function GetMyData(userId: number, token: string) {
  */
 export async function handleLogin(cpf: string, password: string) {
   try {
+    console.log("[LOGIN] Iniciando login...");
     const response = await Login(cpf, password);
 
     if (!response) {
+      console.log("[LOGIN] Login falhou: resposta vazia da API");
       if (crashlytics) {
         crashlytics().log("Login falhou: dados inválidos");
         crashlytics().recordError(
@@ -107,34 +125,57 @@ export async function handleLogin(cpf: string, password: string) {
       return null;
     }
 
+    console.log("[LOGIN] Login bem-sucedido, registrando analytics...");
     if (analytics) {
-      await analytics().logEvent("login_success", {
-        userId: response.id,
-        cpf: response.user.cpf,
-      });
+      try {
+        await analytics().logEvent("login_success", {
+          userId: response.id,
+          cpf: response.user.cpf,
+        });
+        console.log("[LOGIN] Analytics registrado com sucesso");
+      } catch (error) {
+        console.warn("[LOGIN] Erro ao registrar analytics, continuando...", error);
+      }
     } else {
       console.log("[MOCK] Login success event logged");
     }
 
-    // Registra token de push notifications
-    const pushToken = await registerForPushNotificationsAsync();
+    // Registra token de push notifications - não bloquear login se falhar
+    let pushToken;
+    try {
+      console.log("[LOGIN] Registrando push notifications...");
+      pushToken = await registerForPushNotificationsAsync();
+      console.log("[LOGIN] Push token obtido:", pushToken ? "sucesso" : "sem token");
 
-    // Envia token para o backend se foi obtido com sucesso
-    if (pushToken && pushToken !== "expo-go-mock-token") {
-      await registerDeviceToken(pushToken, response.id);
+      // Envia token para o backend se foi obtido com sucesso
+      if (pushToken && pushToken !== "expo-go-mock-token") {
+        try {
+          await registerDeviceToken(pushToken, response.id);
+          console.log("[LOGIN] Token registrado no backend");
+        } catch (error) {
+          console.warn("[LOGIN] Erro ao registrar token no backend, continuando...", error);
+        }
+      }
+    } catch (error) {
+      console.warn("[LOGIN] Erro ao obter push token, continuando sem notificações...", error);
     }
 
+    console.log("[LOGIN] Login completo, retornando dados");
     return {
       data: response,
       pushToken,
     };
   } catch (error: any) {
+    console.error("[LOGIN] Erro crítico no login:", error);
     if (crashlytics) {
-      crashlytics().recordError(error);
+      try {
+        crashlytics().recordError(error);
+      } catch (e) {
+        console.warn("[LOGIN] Erro ao registrar no crashlytics:", e);
+      }
     } else {
       console.log("[MOCK] Error logged:", error);
     }
-    console.error("Erro no login:", error);
     return null;
   }
 }

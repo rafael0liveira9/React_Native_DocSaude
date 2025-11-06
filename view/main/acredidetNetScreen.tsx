@@ -8,8 +8,9 @@ import { Colors } from "@/constants/Colors";
 import ThemeContext from "@/controllers/context";
 import { styles } from "@/styles/acredidet";
 import { globalStyles } from "@/styles/global";
-import { FontAwesome } from "@expo/vector-icons";
+import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useContext, useEffect, useState } from "react";
+import { useRouter } from "expo-router";
 import {
   ActivityIndicator,
   Linking,
@@ -17,9 +18,12 @@ import {
   Text,
   TouchableOpacity,
   View,
+  SafeAreaView,
+  StatusBar,
 } from "react-native";
 
 export default function AcreditedNetScreen() {
+  const router = useRouter();
   const themeColors = Colors["dark"];
   const ctx = useContext(ThemeContext)!;
   const [selectedUF, setSelectedUF] = useState<string>("");
@@ -191,7 +195,7 @@ export default function AcreditedNetScreen() {
   }, [selectedUF, selectedCity, selectedSpeciality, openNowText]);
 
   return (
-    <View
+    <SafeAreaView
       style={[
         styles.mainScreen,
         globalStyles.flexc,
@@ -201,6 +205,34 @@ export default function AcreditedNetScreen() {
         },
       ]}
     >
+      <StatusBar barStyle="light-content" />
+
+      {/* Custom Header */}
+      <View style={{
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        marginBottom: 10,
+      }}>
+        <TouchableOpacity
+          style={{ padding: 4 }}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="chevron-back" size={28} color={themeColors.text} />
+        </TouchableOpacity>
+        <Text style={{
+          fontSize: 20,
+          fontWeight: "bold",
+          color: themeColors.text,
+        }}>
+          Rede Credenciada
+        </Text>
+        <View style={{ width: 28 }} />
+      </View>
+
       <ScrollView
         style={[
           styles.BoxScreen,
@@ -306,6 +338,6 @@ export default function AcreditedNetScreen() {
         </Text>
         <FontAwesome name="whatsapp" size={24} color="#FFF" />
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }

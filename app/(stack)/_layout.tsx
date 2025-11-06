@@ -10,16 +10,19 @@ function StackLayoutContent() {
       <Stack.Screen
         name="accredited/index"
         options={{
-          title: "Rede Credenciada",
-          headerTitleStyle: {
-            fontSize: 22,
-          },
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="example/index"
         options={{
           title: "Página Exemplo",
+        }}
+      />
+      <Stack.Screen
+        name="telemedicina"
+        options={{
+          headerShown: false,
         }}
       />
     </Stack>
