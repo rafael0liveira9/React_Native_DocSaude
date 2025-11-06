@@ -11,6 +11,7 @@ import {
   Image,
   Keyboard,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   ScrollView,
   Text,
@@ -206,8 +207,8 @@ export default function LoginScreen() {
           justifyContent: "center",
           alignItems: "center",
           paddingHorizontal: "7%",
-          gap: 20,
-          borderWidth: 1,
+          paddingVertical: 30,
+          gap: 15,
         }}
         keyboardShouldPersistTaps="handled"
       >
@@ -215,7 +216,7 @@ export default function LoginScreen() {
           style={styles.logo}
           source={require(`@/assets/docsaude/LOGO-TOTALDOC-todo-branco-fundo-transparente.png`)}
         />
-        <View style={{ height: 50 }} />
+        <View style={{ height: 20 }} />
 
         <TextInput
           placeholder="CPF"
@@ -248,7 +249,7 @@ export default function LoginScreen() {
           ]}
         />
 
-        <View style={{ height: 30 }} />
+        <View style={{ height: 10 }} />
 
         <TouchableOpacity
           onPress={handleLoginFunction}
@@ -277,6 +278,24 @@ export default function LoginScreen() {
         >
           {textError}
         </Text>
+
+        <View style={{ height: 10 }} />
+
+        <TouchableOpacity
+          onPress={() => Linking.openURL("https://www.totaldoc.com.br/politica-de-privacidade")}
+          style={{ marginBottom: 10 }}
+        >
+          <Text
+            style={{
+              color: "rgba(255, 255, 255, 0.5)",
+              fontSize: 12,
+              textAlign: "center",
+              textDecorationLine: "underline",
+            }}
+          >
+            Política de Privacidade
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
 
       <TermsOfUseModal
