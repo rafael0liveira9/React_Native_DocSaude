@@ -1,5 +1,4 @@
 import { GetMyData } from "@/api/auth";
-import Hello from "@/components/fragments/hello";
 import { LogoutModal } from "@/components/fragments/modalLogout";
 import Header from "@/components/header";
 import HomeMain from "@/components/homeMain";
@@ -167,7 +166,6 @@ export default function HomeScreen() {
       }}
     >
       <Header notify={notify}></Header>
-      {!!user && user?.name && <Hello user={user}></Hello>}
 
       {isLoadingUser ? (
         <View
@@ -186,6 +184,7 @@ export default function HomeScreen() {
           cards={cards}
           menuItens={menuItens}
           onCustomAction={handleCustomAction}
+          user={user}
         ></HomeMain>
       )}
 

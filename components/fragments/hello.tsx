@@ -14,7 +14,8 @@ export default function Hello({ user }: any) {
         {
           justifyContent: "flex-start",
           paddingHorizontal: "7%",
-          paddingVertical: 40,
+          paddingTop: 20,
+          paddingBottom: 10,
         },
       ]}
     >
