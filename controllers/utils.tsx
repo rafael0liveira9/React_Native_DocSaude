@@ -9,19 +9,19 @@ export const menuItens = [
     url: "/(stack)/telemedicina",
   },
   {
+    title: "Atendimento TotalDoc",
+    icon: require("../assets/docsaude/icons/suport-icon.png"),
+    action: "callWhatsapp",
+  },
+  {
     title: "Farmácias",
     icon: require("../assets/docsaude/icons/farmac-icon.png"),
-    url: "/(stack)/example",
+    url: "",
   },
   {
     title: "Rede Credênciada",
     icon: require("../assets/docsaude/icons/mark-icon.png"),
     url: "/(stack)/accredited",
-  },
-  {
-    title: "Atendimento TotalDoc",
-    icon: require("../assets/docsaude/icons/suport-icon.png"),
-    action: "callWhatsapp",
   },
   {
     title: "Suporte Técnico 24h",

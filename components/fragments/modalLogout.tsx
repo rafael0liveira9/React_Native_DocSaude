@@ -1,3 +1,4 @@
+import { Fonts } from "@/constants/Fonts";
 import React from "react";
 import {
   ActivityIndicator,
@@ -65,6 +66,7 @@ export function LogoutModal({
             style={{
               color: themeColors?.black || "#333",
               fontSize: 16,
+              fontFamily: Fonts.regular,
               textAlign: "center",
               marginBottom: 24,
             }}
@@ -96,7 +98,7 @@ export function LogoutModal({
                 {isLoading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={{ color: "#fff", fontSize: 16 }}>Sim</Text>
+                  <Text style={{ color: "#fff", fontSize: 16, fontFamily: Fonts.semiBold }}>Sim</Text>
                 )}
               </TouchableOpacity>
               <TouchableOpacity
@@ -111,7 +113,7 @@ export function LogoutModal({
                 onPress={onCancel || close}
                 activeOpacity={0.8}
               >
-                <Text style={{ color: "#fff", fontSize: 16 }}>Não</Text>
+                <Text style={{ color: "#fff", fontSize: 16, fontFamily: Fonts.semiBold }}>Não</Text>
               </TouchableOpacity>
             </View>
           ) : (

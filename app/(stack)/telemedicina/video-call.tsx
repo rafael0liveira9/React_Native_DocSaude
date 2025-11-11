@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/Colors";
+import { Fonts } from "@/constants/Fonts";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useEffect, useState, useRef } from "react";
 import {
@@ -421,5 +422,6 @@ const styles = StyleSheet.create({
     marginTop: 15,
     color: "#fff",
     fontSize: 16,
+    fontFamily: Fonts.regular,
   },
 });

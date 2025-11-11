@@ -19,12 +19,17 @@ export default function MenuItensCard({ menu, onCustomAction }: any) {
   return (
     <View style={[globalStyles.flexr, globalStyles.wfull, styles.menuCardMain]}>
       {menu.map((e: any, y: number) => {
+        const isHighlighted = y < 2;
+
         return (
           <TouchableOpacity
             style={[
               styles.menuCardItem,
+              isHighlighted && styles.menuCardItemHighlight,
               {
-                borderColor: themeColors.tint,
+                borderColor: isHighlighted
+                  ? themeColors.blue
+                  : themeColors.tint,
                 backgroundColor: themeColors.backgroundSecondary,
               },
             ]}

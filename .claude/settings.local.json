@@ -5,7 +5,12 @@
       "Bash(npm install:*)",
       "Bash(eas --version:*)",
       "Bash(chmod:*)",
-      "Bash(./scripts/fix-podfile.sh:*)"
+      "Bash(./scripts/fix-podfile.sh:*)",
+      "Bash(./gradlew:*)",
+      "Bash(npx expo start:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

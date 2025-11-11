@@ -2,6 +2,7 @@ import { handleLogin, TermsAccept } from "@/api/auth";
 import { getTermosDeUso } from "@/api/termsOfUse";
 import { TermsOfUseModal } from "@/components/fragments/modalTermsOfUse";
 import { Colors } from "@/constants/Colors";
+import { Fonts } from "@/constants/Fonts";
 import { styles } from "@/styles/auth";
 import { globalStyles } from "@/styles/global";
 import { useRouter } from "expo-router";
@@ -260,6 +261,7 @@ export default function LoginScreen() {
             style={{
               color: themeColors.background,
               fontWeight: "900",
+              fontFamily: Fonts.bold,
               fontSize: 24,
             }}
           >
@@ -271,6 +273,7 @@ export default function LoginScreen() {
           style={{
             color: themeColors.danger,
             fontWeight: "900",
+            fontFamily: Fonts.bold,
             fontSize: 14,
             width: "100%",
             paddingHorizontal: 20,
@@ -289,6 +292,7 @@ export default function LoginScreen() {
             style={{
               color: "rgba(255, 255, 255, 0.5)",
               fontSize: 12,
+              fontFamily: Fonts.regular,
               textAlign: "center",
               textDecorationLine: "underline",
             }}

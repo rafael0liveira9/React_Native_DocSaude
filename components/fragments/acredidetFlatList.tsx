@@ -1,4 +1,5 @@
 import { globalStyles } from "@/styles/global";
+import { Fonts } from "@/constants/Fonts";
 import { FlatList, Image, Text, View } from "react-native";
 
 export default function AcredidetList({
@@ -37,14 +38,15 @@ export default function AcredidetList({
             <Text
               style={{
                 fontWeight: "bold",
+                fontFamily: Fonts.bold,
                 color: themeColors.black,
                 fontSize: 18,
               }}
             >
               {item.name}
             </Text>
-            <Text style={{ color: themeColors.black }}>{item.speciality}</Text>
-            <Text style={{ color: themeColors.black }}>
+            <Text style={{ color: themeColors.black, fontFamily: Fonts.regular }}>{item.speciality}</Text>
+            <Text style={{ color: themeColors.black, fontFamily: Fonts.regular }}>
               {item.address}, {item.number} {item.complement}
             </Text>
           </View>

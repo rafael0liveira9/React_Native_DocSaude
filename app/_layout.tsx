@@ -18,6 +18,14 @@ import { useEffect, useState } from "react";
 import "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+import {
+  useFonts,
+  Montserrat_300Light,
+  Montserrat_400Regular,
+  Montserrat_500Medium,
+  Montserrat_600SemiBold,
+  Montserrat_700Bold,
+} from "@expo-google-fonts/montserrat";
 
 export default function RootLayout() {
   const themeColors = Colors["dark"];
@@ -25,6 +33,15 @@ export default function RootLayout() {
   const [token, setToken] = useState<string | null>(null);
   const [hasRedirected, setHasRedirected] = useState(false);
   const [isReady, setIsReady] = useState(false);
+
+  // Carrega as fontes Montserrat
+  const [fontsLoaded] = useFonts({
+    Montserrat_300Light,
+    Montserrat_400Regular,
+    Montserrat_500Medium,
+    Montserrat_600SemiBold,
+    Montserrat_700Bold,
+  });
 
   async function getToken() {
     try {
@@ -110,7 +127,7 @@ export default function RootLayout() {
     }
   }, [isReady, token]);
 
-  if (!isReady) {
+  if (!isReady || !fontsLoaded) {
     return <SplashScreen />;
   }
 

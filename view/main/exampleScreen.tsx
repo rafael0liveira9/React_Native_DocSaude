@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/Colors";
+import { Fonts } from "@/constants/Fonts";
 import ThemeContext from "@/controllers/context";
 import { styles } from "@/styles/acredidet";
 import { globalStyles } from "@/styles/global";
@@ -33,7 +34,7 @@ export default function ExampleScreen() {
           { justifyContent: "flex-start" },
         ]}
       >
-        <Text style={{ fontSize: 40, color: "#000000" }}>Pagina</Text>
+        <Text style={{ fontSize: 40, fontFamily: Fonts.regular, color: "#000000" }}>Pagina</Text>
       </ScrollView>
     </View>
   );

@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/Colors";
+import { Fonts } from "@/constants/Fonts";
 import { formatDate } from "@/controllers/utils";
 import { globalStyles } from "@/styles/global";
 import { styles } from "@/styles/home";
@@ -48,7 +49,7 @@ export default function PersonalCardCarousel({
             <Text
               style={[
                 styles.cardPreviewText,
-                { fontSize: 16, fontWeight: "700" },
+                { fontSize: 16, fontWeight: "700", fontFamily: Fonts.bold },
               ]}
             >
               {item.name}
@@ -60,6 +61,7 @@ export default function PersonalCardCarousel({
                   {
                     fontSize: 12,
                     fontWeight: "600",
+                    fontFamily: Fonts.semiBold,
                     opacity: 0.8,
                     marginTop: 2,
                   },
@@ -72,7 +74,7 @@ export default function PersonalCardCarousel({
           <Text
             style={[
               styles.cardPreviewText,
-              { fontSize: 18, fontWeight: "700", letterSpacing: 1 },
+              { fontSize: 18, fontWeight: "700", fontFamily: Fonts.bold, letterSpacing: 1 },
             ]}
           >
             {formattedNumber}
@@ -87,13 +89,13 @@ export default function PersonalCardCarousel({
               },
             ]}
           >
-            <Text style={{ fontSize: 10, fontWeight: "600", opacity: 0.7 }}>
+            <Text style={{ fontSize: 10, fontWeight: "600", fontFamily: Fonts.semiBold, opacity: 0.7 }}>
               VALIDADE
             </Text>
             <Text
               style={[
                 styles.cardPreviewText,
-                { fontSize: 14, fontWeight: "600" },
+                { fontSize: 14, fontWeight: "600", fontFamily: Fonts.semiBold },
               ]}
             >
               {formatDate(item.validAt)}
@@ -132,6 +134,7 @@ export default function PersonalCardCarousel({
               style={{
                 color: themeColors.background,
                 fontWeight: "600",
+                fontFamily: Fonts.semiBold,
                 fontSize: 12,
                 textAlign: "center",
                 lineHeight: 14,

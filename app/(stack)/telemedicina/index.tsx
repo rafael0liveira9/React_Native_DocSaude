@@ -1,21 +1,21 @@
+import telemedicinaService from "@/api/telemedicina";
 import { Colors } from "@/constants/Colors";
+import { Fonts } from "@/constants/Fonts";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
   Text,
   TouchableOpacity,
-  ActivityIndicator,
-  StyleSheet,
-  Alert,
-  ScrollView,
-  SafeAreaView,
-  StatusBar,
+  View,
 } from "react-native";
-import telemedicinaService from "@/api/telemedicina";
 import Toast from "react-native-toast-message";
-import { Ionicons } from "@expo/vector-icons";
 
 export default function TelemedicinaMenuScreen() {
   const router = useRouter();
@@ -43,7 +43,10 @@ export default function TelemedicinaMenuScreen() {
         return;
       }
 
-      console.log("[TELEMEDICINA_SCREEN] Inicializando para usuário:", userIdFromStore);
+      console.log(
+        "[TELEMEDICINA_SCREEN] Inicializando para usuário:",
+        userIdFromStore
+      );
 
       const isRegistered = await telemedicinaService.isRegistered();
 
@@ -55,7 +58,6 @@ export default function TelemedicinaMenuScreen() {
 
       await telemedicinaService.validate(parseInt(userIdFromStore));
       console.log("[TELEMEDICINA_SCREEN] Acesso validado!");
-
     } catch (error: any) {
       console.error("[TELEMEDICINA_SCREEN] Erro ao inicializar:", error);
       setHasError(true);
@@ -86,7 +88,13 @@ export default function TelemedicinaMenuScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.centered, { backgroundColor: themeColors.background }]}>
+      <View
+        style={[
+          styles.container,
+          styles.centered,
+          { backgroundColor: themeColors.background },
+        ]}
+      >
         <ActivityIndicator size="large" color={themeColors.tint} />
         <Text style={[styles.loadingText, { color: themeColors.text }]}>
           Conectando ao serviço de telemedicina...
@@ -130,7 +138,9 @@ export default function TelemedicinaMenuScreen() {
             activeOpacity={0.8}
           >
             <View style={styles.cardHeader}>
-              <View style={[styles.iconContainer, { backgroundColor: "rgba(255, 255, 255, 0.2)" }]}>
+              <View
+                style={[styles.iconContainer, { backgroundColor: "#ffffff" }]}
+              >
                 <Text style={styles.cardIcon}>🩺</Text>
               </View>
               <View style={styles.cardBadge}>
@@ -145,24 +155,22 @@ export default function TelemedicinaMenuScreen() {
         </View>
 
         <View style={styles.infoSection}>
-          <Text style={[styles.infoTitle, { color: themeColors.text }]}>
-            Como funciona?
-          </Text>
+          <Text style={styles.infoTitle}>Como funciona?</Text>
           <View style={styles.infoItem}>
             <Text style={styles.infoNumber}>1</Text>
-            <Text style={[styles.infoText, { color: "#999" }]}>
-              Clique em "Consultar Agora" para iniciar
+            <Text style={styles.infoText}>
+              Clique em &quot;Consultar Agora&quot; para iniciar
             </Text>
           </View>
           <View style={styles.infoItem}>
             <Text style={styles.infoNumber}>2</Text>
-            <Text style={[styles.infoText, { color: "#999" }]}>
+            <Text style={styles.infoText}>
               Aguarde enquanto conectamos você a um médico
             </Text>
           </View>
           <View style={styles.infoItem}>
             <Text style={styles.infoNumber}>3</Text>
-            <Text style={[styles.infoText, { color: "#999" }]}>
+            <Text style={styles.infoText}>
               Realize sua consulta por videochamada
             </Text>
           </View>
@@ -190,6 +198,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 15,
     fontSize: 16,
+    fontFamily: Fonts.regular,
     textAlign: "center",
   },
   topBar: {
@@ -206,6 +215,7 @@ const styles = StyleSheet.create({
   pageTitle: {
     fontSize: 20,
     fontWeight: "bold",
+    fontFamily: Fonts.bold,
   },
   header: {
     marginBottom: 20,
@@ -213,6 +223,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
+    fontFamily: Fonts.regular,
   },
   cardsContainer: {
     gap: 16,
@@ -230,7 +241,7 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   primaryCard: {
-    backgroundColor: "#e74c3c",
+    backgroundColor: "#00E276",
   },
   secondaryCard: {
     backgroundColor: "#0b1635",
@@ -255,7 +266,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
   },
   cardBadge: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: "#032FEA",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
@@ -264,15 +275,18 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 12,
     fontWeight: "600",
+    fontFamily: Fonts.semiBold,
   },
   cardTitle: {
     fontSize: 22,
     fontWeight: "bold",
+    fontFamily: Fonts.bold,
     color: "#fff",
     marginBottom: 8,
   },
   cardDescription: {
     fontSize: 14,
+    fontFamily: Fonts.regular,
     color: "rgba(255, 255, 255, 0.9)",
     lineHeight: 20,
   },
@@ -289,32 +303,41 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 12,
     fontWeight: "600",
+    fontFamily: Fonts.semiBold,
   },
   infoSection: {
-    backgroundColor: "rgba(11, 22, 53, 0.5)",
-    padding: 20,
-    borderRadius: 16,
+    backgroundColor: "#FFFFFF",
+    padding: 24,
+    borderRadius: 20,
     marginTop: 10,
     marginHorizontal: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   infoTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 16,
+    fontFamily: Fonts.bold,
+    marginBottom: 20,
+    color: "#0D1633",
   },
   infoItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 16,
   },
   infoNumber: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: "#e74c3c",
+    backgroundColor: "#00E276",
     color: "#fff",
     fontSize: 14,
     fontWeight: "bold",
+    fontFamily: Fonts.bold,
     textAlign: "center",
     lineHeight: 28,
     marginRight: 12,
@@ -322,6 +345,8 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 14,
+    fontFamily: Fonts.regular,
     lineHeight: 20,
+    color: "#333",
   },
 });

@@ -1,3 +1,4 @@
+import { Fonts } from "@/constants/Fonts";
 import { Picker } from "@react-native-picker/picker";
 import { Platform, Text, TextInput, View } from "react-native";
 
@@ -113,6 +114,7 @@ export default function AcredidetFilters({
             style={{
               fontSize: 14,
               fontWeight: "600",
+              fontFamily: Fonts.semiBold,
               color: themeColors.text || "#000",
               marginBottom: 6,
             }}
@@ -133,6 +135,7 @@ export default function AcredidetFilters({
               backgroundColor: themeColors.white || "#FFF",
               color: themeColors.black || "#000",
               fontSize: 16,
+              fontFamily: Fonts.regular,
               height: 60,
             }}
           />

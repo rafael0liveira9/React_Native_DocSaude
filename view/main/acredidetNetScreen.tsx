@@ -5,6 +5,7 @@ import {
 import AcredidetFilters from "@/components/fragments/acredidetFilters";
 import AcredidetList from "@/components/fragments/acredidetFlatList";
 import { Colors } from "@/constants/Colors";
+import { Fonts } from "@/constants/Fonts";
 import ThemeContext from "@/controllers/context";
 import { styles } from "@/styles/acredidet";
 import { globalStyles } from "@/styles/global";
@@ -226,6 +227,7 @@ export default function AcreditedNetScreen() {
         <Text style={{
           fontSize: 20,
           fontWeight: "bold",
+          fontFamily: Fonts.bold,
           color: themeColors.text,
         }}>
           Rede Credenciada
@@ -266,6 +268,7 @@ export default function AcreditedNetScreen() {
               marginTop: 30,
               marginBottom: 30,
               fontWeight: 800,
+              fontFamily: Fonts.bold,
               fontSize: 26,
             }}
           >
@@ -295,6 +298,7 @@ export default function AcreditedNetScreen() {
                       marginTop: 30,
                       marginBottom: 30,
                       fontWeight: 600,
+                      fontFamily: Fonts.semiBold,
                       fontSize: 16,
                     }}
                   >
@@ -331,6 +335,7 @@ export default function AcreditedNetScreen() {
             color: "#FFF",
             fontSize: 16,
             fontWeight: "600",
+            fontFamily: Fonts.semiBold,
             marginRight: 8,
           }}
         >

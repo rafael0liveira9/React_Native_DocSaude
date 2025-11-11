@@ -1,6 +1,7 @@
 import { deleteDeviceToken } from "@/api/firebase";
 import { deleteDeviceTokenFromBackend } from "@/api/notifications";
 import { Colors } from "@/constants/Colors";
+import { Fonts } from "@/constants/Fonts";
 import { globalStyles } from "@/styles/global";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { router } from "expo-router";

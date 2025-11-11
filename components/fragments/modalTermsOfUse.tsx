@@ -1,3 +1,4 @@
+import { Fonts } from "@/constants/Fonts";
 import React from "react";
 import {
   ActivityIndicator,
@@ -77,6 +78,7 @@ export function TermsOfUseModal({
               color: themeColors?.black || "#333",
               fontSize: 24,
               fontWeight: "bold",
+              fontFamily: Fonts.bold,
               textAlign: "center",
               marginBottom: 16,
             }}
@@ -136,7 +138,7 @@ export function TermsOfUseModal({
                 disabled={isLoading}
               >
                 <Text
-                  style={{ color: "#fff", fontSize: 18, fontWeight: "bold" }}
+                  style={{ color: "#fff", fontSize: 18, fontWeight: "bold", fontFamily: Fonts.bold }}
                 >
                   Sim, concordo
                 </Text>
@@ -153,7 +155,7 @@ export function TermsOfUseModal({
                 activeOpacity={0.8}
               >
                 <Text
-                  style={{ color: "#fff", fontSize: 18, fontWeight: "bold" }}
+                  style={{ color: "#fff", fontSize: 18, fontWeight: "bold", fontFamily: Fonts.bold }}
                 >
                   Não concordo
                 </Text>

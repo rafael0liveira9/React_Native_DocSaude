@@ -136,8 +136,10 @@ export default function HomeScreen() {
   }
 
   function handleCallWhatsapp() {
-    const whatsNumber = "5541988413030";
-    const message = "Preciso de atendimento Total Doc Saude";
+    const whatsNumber = "5508000024002";
+    const userName = user?.name || "Cliente";
+    const companyOrPlan = user?.companyName || user?.typeName || "assinante";
+    const message = `Olá sou ${userName} assinante TotalDoc ${companyOrPlan}`;
     const url = `https://wa.me/${whatsNumber}?text=${encodeURIComponent(
       message
     )}`;

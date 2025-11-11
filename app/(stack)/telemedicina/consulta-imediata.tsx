@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/Colors";
+import { Fonts } from "@/constants/Fonts";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useState, useRef } from "react";
@@ -269,7 +270,7 @@ export default function ConsultaImediataScreen() {
             <Text style={styles.statusDescription}>
               Iniciando videochamada...
             </Text>
-            <ActivityIndicator size="large" color="#27ae60" />
+            <ActivityIndicator size="large" color="#00E276" />
           </>
         );
 
@@ -326,16 +327,19 @@ const styles = StyleSheet.create({
   statusText: {
     marginTop: 20,
     fontSize: 16,
+    fontFamily: Fonts.regular,
     color: "#666",
   },
   statusTitle: {
     fontSize: 24,
     fontWeight: "bold",
+    fontFamily: Fonts.bold,
     textAlign: "center",
     marginBottom: 10,
   },
   statusDescription: {
     fontSize: 16,
+    fontFamily: Fonts.regular,
     color: "#666",
     textAlign: "center",
     marginBottom: 20,
@@ -343,9 +347,10 @@ const styles = StyleSheet.create({
   },
   estimatedWait: {
     fontSize: 14,
-    color: "#27ae60",
+    color: "#00E276",
     marginTop: 10,
     fontWeight: "600",
+    fontFamily: Fonts.semiBold,
   },
   successIcon: {
     fontSize: 80,
@@ -372,6 +377,7 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 14,
+    fontFamily: Fonts.regular,
     color: "#1976D2",
     lineHeight: 20,
   },
@@ -387,6 +393,7 @@ const styles = StyleSheet.create({
     color: "#e74c3c",
     fontSize: 16,
     fontWeight: "bold",
+    fontFamily: Fonts.bold,
   },
   button: {
     marginTop: 20,
@@ -398,5 +405,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+    fontFamily: Fonts.bold,
   },
 });

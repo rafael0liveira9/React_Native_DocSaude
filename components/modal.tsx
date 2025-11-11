@@ -1,9 +1,11 @@
+import { Fonts } from "@/constants/Fonts";
 import { formatDate } from "@/controllers/utils";
 import { globalStyles } from "@/styles/global";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import React from "react";
 import {
   Dimensions,
+  Image,
   Modal,
   Pressable,
   StyleSheet,
@@ -59,6 +61,15 @@ export default function PersonalCardModal({
                 { justifyContent: "space-around", alignItems: "flex-start" },
               ]}
             >
+              {/* Logo TotalDoc */}
+              <View style={stylesInside.logoContainer}>
+                <Image
+                  source={require("@/assets/docsaude/LOGO-TOTALDOC-todo-cinzafundo-transparente.png")}
+                  style={stylesInside.logo}
+                  resizeMode="contain"
+                />
+              </View>
+
               <View
                 style={[
                   stylesInside.cardFirstSeparation,
@@ -69,7 +80,7 @@ export default function PersonalCardModal({
                 <Text
                   style={[
                     stylesInside.cardPreviewText,
-                    { fontSize: 20, fontWeight: "700" },
+                    { fontSize: 20, fontWeight: "700", fontFamily: Fonts.bold },
                   ]}
                 >
                   {user?.name}
@@ -86,7 +97,12 @@ export default function PersonalCardModal({
                     ]}
                   >
                     <Text
-                      style={{ fontSize: 10, fontWeight: "600", opacity: 0.7 }}
+                      style={{
+                        fontSize: 10,
+                        fontWeight: "600",
+                        fontFamily: Fonts.semiBold,
+                        opacity: 0.7,
+                      }}
                     >
                       NASCIMENTO
                     </Text>
@@ -105,7 +121,12 @@ export default function PersonalCardModal({
                     ]}
                   >
                     <Text
-                      style={{ fontSize: 10, fontWeight: "600", opacity: 0.7 }}
+                      style={{
+                        fontSize: 10,
+                        fontWeight: "600",
+                        fontFamily: Fonts.semiBold,
+                        opacity: 0.7,
+                      }}
                     >
                       CPF
                     </Text>
@@ -137,7 +158,12 @@ export default function PersonalCardModal({
                   ]}
                 >
                   <Text
-                    style={{ fontSize: 10, fontWeight: "600", opacity: 0.7 }}
+                    style={{
+                      fontSize: 10,
+                      fontWeight: "600",
+                      fontFamily: Fonts.semiBold,
+                      opacity: 0.7,
+                    }}
                   >
                     NÚMERO DA CARTEIRINHA
                   </Text>
@@ -157,7 +183,12 @@ export default function PersonalCardModal({
                     ]}
                   >
                     <Text
-                      style={{ fontSize: 10, fontWeight: "600", opacity: 0.7 }}
+                      style={{
+                        fontSize: 10,
+                        fontWeight: "600",
+                        fontFamily: Fonts.semiBold,
+                        opacity: 0.7,
+                      }}
                     >
                       ATIVAÇÃO
                     </Text>
@@ -176,7 +207,12 @@ export default function PersonalCardModal({
                     ]}
                   >
                     <Text
-                      style={{ fontSize: 10, fontWeight: "600", opacity: 0.7 }}
+                      style={{
+                        fontSize: 10,
+                        fontWeight: "600",
+                        fontFamily: Fonts.semiBold,
+                        opacity: 0.7,
+                      }}
                     >
                       VALIDADE
                     </Text>
@@ -204,7 +240,12 @@ export default function PersonalCardModal({
                   ]}
                 >
                   <Text
-                    style={{ fontSize: 10, fontWeight: "600", opacity: 0.7 }}
+                    style={{
+                      fontSize: 10,
+                      fontWeight: "600",
+                      fontFamily: Fonts.semiBold,
+                      opacity: 0.7,
+                    }}
                   >
                     {user?.type === "PF" ? `NOME DO PLANO` : `NOME DA EMPRESA`}
                   </Text>
@@ -248,6 +289,7 @@ export default function PersonalCardModal({
                   style={{
                     color: themeColors.background,
                     fontWeight: "600",
+                    fontFamily: Fonts.semiBold,
                     fontSize: 14,
                     textAlign: "center",
                   }}
@@ -282,6 +324,7 @@ const stylesInside = StyleSheet.create({
   },
   defaultText: {
     fontSize: 18,
+    fontFamily: Fonts.regular,
     textAlign: "center",
   },
   closeButton: {
@@ -294,6 +337,7 @@ const stylesInside = StyleSheet.create({
   closeText: {
     color: "#fff",
     fontWeight: "bold",
+    fontFamily: Fonts.bold,
   },
   previewBtnBox: {
     width: "100%",
@@ -323,5 +367,16 @@ const stylesInside = StyleSheet.create({
   cardPreviewText: {
     fontSize: 18,
     fontWeight: 600,
+    fontFamily: Fonts.semiBold,
+  },
+  logoContainer: {
+    width: "100%",
+    alignItems: "flex-start",
+    marginBottom: 15,
+    paddingTop: 10,
+  },
+  logo: {
+    width: 180,
+    height: 60,
   },
 });

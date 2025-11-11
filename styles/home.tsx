@@ -1,9 +1,11 @@
+import { Fonts } from "@/constants/Fonts";
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
   helloTitle: {
-    fontSize: 30,
+    fontSize: 24,
     fontWeight: 600,
+    fontFamily: Fonts.semiBold,
   },
   homeMain: {
     width: "100%",
@@ -34,6 +36,7 @@ export const styles = StyleSheet.create({
   cardPreviewText: {
     fontSize: 18,
     fontWeight: 600,
+    fontFamily: Fonts.semiBold,
   },
   previewBtnBox: {
     width: "100%",
@@ -52,7 +55,7 @@ export const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   menuCardItem: {
-    width: "31%",
+    width: "48%",
     height: 115,
     marginBottom: 30,
     borderWidth: 2,
@@ -70,9 +73,19 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 15,
   },
+  menuCardItemHighlight: {
+    borderWidth: 3,
+    shadowColor: "#00E276",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 6,
+    transform: [{ scale: 1.02 }],
+  },
   menuCardItemText: {
     fontSize: 12,
     fontWeight: 600,
+    fontFamily: Fonts.semiBold,
     textAlign: "left",
     flexWrap: "wrap",
   },

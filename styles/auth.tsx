@@ -1,6 +1,7 @@
 import {
     StyleSheet
 } from "react-native";
+import { Fonts } from "@/constants/Fonts";
 
 export const styles = StyleSheet.create({
     logo: {
@@ -14,7 +15,8 @@ export const styles = StyleSheet.create({
         paddingHorizontal: 20,
         borderWidth: 1,
         borderRadius: 8,
-        fontSize: 22
+        fontSize: 22,
+        fontFamily: Fonts.regular
     },
     loginBtnStyle: {
         width: "100%",
