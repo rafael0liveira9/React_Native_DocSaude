@@ -62,7 +62,11 @@ export default function PersonalCardModal({
               ]}
             >
               {/* Logo TotalDoc */}
-              <View style={stylesInside.logoContainer}>
+              <View
+                style={{
+                  ...stylesInside.logoContainer,
+                }}
+              >
                 <Image
                   source={require("@/assets/docsaude/LOGO-TOTALDOC-todo-cinzafundo-transparente.png")}
                   style={stylesInside.logo}
@@ -313,7 +317,7 @@ const stylesInside = StyleSheet.create({
     alignItems: "center",
   },
   PersonalCardModalContainer: {
-    justifyContent: "center",
+    justifyContent: "flex-start",
     alignItems: "center",
     transform: [{ rotate: "90deg" }],
   },
@@ -321,6 +325,7 @@ const stylesInside = StyleSheet.create({
     width: width * 1.4,
     height: width * 0.9,
     borderRadius: 35,
+    alignItems: "center",
   },
   defaultText: {
     fontSize: 18,
@@ -350,7 +355,6 @@ const stylesInside = StyleSheet.create({
   cardFirst: {
     width: "80%",
     height: "100%",
-    paddingVertical: 40,
   },
   cardFirstSeparation: {
     width: "100%",
