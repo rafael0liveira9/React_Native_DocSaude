@@ -4,29 +4,29 @@ export const emailRegex =
   /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\.[a-zA-Z]{2,})?$/;
 export const menuItens = [
   {
-    title: "Pronto Atendimento",
+    title: "⁠Pronto Atendimento Online 24h",
     icon: require("../assets/docsaude/icons/scope-icon.png"),
     url: "/(stack)/telemedicina",
   },
   {
-    title: "Atendimento TotalDoc",
+    title: "Concierge em Saúde",
     icon: require("../assets/docsaude/icons/suport-icon.png"),
     action: "callWhatsapp",
   },
   {
-    title: "Farmácias",
-    icon: require("../assets/docsaude/icons/farmac-icon.png"),
-    url: "",
+    title: "Suporte Técnico ao Pronto Atendimento 24h",
+    icon: require("../assets/docsaude/icons/engine-icon.png"),
+    action: "callSupport",
   },
   {
-    title: "Rede Credênciada",
+    title: "Rede Credenciada Presencial",
     icon: require("../assets/docsaude/icons/mark-icon.png"),
     url: "/(stack)/accredited",
   },
   {
-    title: "Suporte Técnico 24h",
-    icon: require("../assets/docsaude/icons/engine-icon.png"),
-    action: "callSupport",
+    title: "⁠Farmácias Conveniadas",
+    icon: require("../assets/docsaude/icons/farmac-icon.png"),
+    url: "",
   },
   {
     title: "Manual do Assinante",
