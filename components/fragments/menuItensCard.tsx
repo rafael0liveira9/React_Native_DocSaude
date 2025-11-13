@@ -2,7 +2,7 @@ import { Colors } from "@/constants/Colors";
 import { globalStyles } from "@/styles/global";
 import { styles } from "@/styles/home";
 import { useRouter } from "expo-router";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 
 export default function MenuItensCard({ menu, onCustomAction }: any) {
   const themeColors = Colors["dark"];
@@ -20,6 +20,7 @@ export default function MenuItensCard({ menu, onCustomAction }: any) {
     <View style={[globalStyles.flexr, globalStyles.wfull, styles.menuCardMain]}>
       {menu.map((e: any, y: number) => {
         const isHighlighted = y < 2;
+        const IconComponent = e.icon;
 
         return (
           <TouchableOpacity
@@ -44,10 +45,7 @@ export default function MenuItensCard({ menu, onCustomAction }: any) {
                 height: 34,
               }}
             >
-              <Image
-                source={e.icon}
-                style={{ width: 34, height: 34, resizeMode: "contain" }}
-              />
+              <IconComponent width={34} height={34} />
             </View>
             <Text style={styles.menuCardItemText}>{e.title}</Text>
           </TouchableOpacity>

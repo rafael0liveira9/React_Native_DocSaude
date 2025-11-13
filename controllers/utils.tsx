@@ -1,3 +1,10 @@
+import EmergenciaIcon from "../assets/docsaude/icons/emergencia.svg";
+import WhatsappIcon from "../assets/docsaude/icons/whatsapp.svg";
+import AssistenciaIcon from "../assets/docsaude/icons/assitencia.svg";
+import RedeIcon from "../assets/docsaude/icons/rede.svg";
+import FarmaciaIcon from "../assets/docsaude/icons/farmacia.svg";
+import ManualIcon from "../assets/docsaude/icons/manual-do-assinante.svg";
+
 export const cpfRegex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
 export const cellPhoneRegex = /^\(\d{2}\)\s\d{4,5}-\d{4}$/;
 export const emailRegex =
@@ -5,32 +12,32 @@ export const emailRegex =
 export const menuItens = [
   {
     title: "⁠Pronto Atendimento Online 24h",
-    icon: require("../assets/docsaude/icons/scope-icon.png"),
+    icon: EmergenciaIcon,
     url: "/(stack)/telemedicina",
   },
   {
     title: "Concierge em Saúde",
-    icon: require("../assets/docsaude/icons/suport-icon.png"),
+    icon: WhatsappIcon,
     action: "callWhatsapp",
   },
   {
     title: "Suporte Técnico ao Pronto Atendimento 24h",
-    icon: require("../assets/docsaude/icons/engine-icon.png"),
+    icon: AssistenciaIcon,
     action: "callSupport",
   },
   {
     title: "Rede Credenciada Presencial",
-    icon: require("../assets/docsaude/icons/mark-icon.png"),
+    icon: RedeIcon,
     url: "/(stack)/accredited",
   },
   {
     title: "⁠Farmácias Conveniadas",
-    icon: require("../assets/docsaude/icons/farmac-icon.png"),
+    icon: FarmaciaIcon,
     url: "",
   },
   {
     title: "Manual do Assinante",
-    icon: require("../assets/docsaude/icons/info-icon.png"),
+    icon: ManualIcon,
     action: "openManual",
   },
 ];
