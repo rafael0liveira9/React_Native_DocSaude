@@ -48,7 +48,7 @@ export default function AcreditedNetScreen() {
         uf: selectedUF || undefined,
         cidade: selectedCity || undefined,
         servico: selectedSpeciality || undefined,
-        aberto: openNowText || undefined,
+        search: openNowText || undefined,
         page: 1,
         limit: 1000,
       });
@@ -57,7 +57,7 @@ export default function AcreditedNetScreen() {
         uf: selectedUF,
         cidade: selectedCity,
         servico: selectedSpeciality,
-        aberto: openNowText,
+        search: openNowText,
         page: 1,
         limit: 1000,
       });
