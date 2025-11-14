@@ -1,6 +1,6 @@
 import { Fonts } from "@/constants/Fonts";
-import { Picker } from "@react-native-picker/picker";
-import { Platform, Text, TextInput, View } from "react-native";
+import { Text, TextInput, View } from "react-native";
+import CustomSelect from "./CustomSelect";
 
 export default function AcredidetFilters({
   ufs,
@@ -16,92 +16,33 @@ export default function AcredidetFilters({
   openNowText,
   setOpenNowText,
 }: any) {
-  const pickerStyle =
-    Platform.OS === "ios"
-      ? { height: 60, color: "#000" }
-      : { height: 60, color: "#000" };
-
   return (
     <View style={{ width: "85%", marginVertical: 20 }}>
-      <View
-        style={{
-          marginBottom: 10,
-          borderColor: themeColors.black,
-          borderWidth: 2,
-          borderRadius: 12,
-          paddingHorizontal: 12,
-          backgroundColor: themeColors.white || "#FFF",
-          height: 60,
-          justifyContent: "center",
+      <CustomSelect
+        label="UF"
+        value={selectedUF}
+        options={ufs}
+        onValueChange={(value) => {
+          setSelectedCity("");
+          setSelectedUF(value);
         }}
-      >
-        <Picker
-          selectedValue={selectedUF}
-          onValueChange={(value) => {
-            setSelectedCity("");
-            setSelectedUF(value);
-          }}
-          style={pickerStyle}
-          itemStyle={{ height: 60, fontSize: 16, color: "#000" }}
-          dropdownIconColor={"#000"}
-        >
-          <Picker.Item label="UF" value="" />
-          {ufs.map((uf: any) => (
-            <Picker.Item key={uf} label={uf} value={uf} />
-          ))}
-        </Picker>
-      </View>
-      <View
-        style={{
-          marginBottom: 10,
-          borderColor: themeColors.black,
-          borderWidth: 2,
-          borderRadius: 12,
-          paddingHorizontal: 12,
-          backgroundColor: themeColors.white || "#FFF",
-          height: 60,
-          justifyContent: "center",
-        }}
-      >
-        <Picker
-          selectedValue={selectedCity}
-          onValueChange={(value) => setSelectedCity(value)}
-          enabled={cities.length > 0}
-          style={pickerStyle}
-          itemStyle={{ height: 60, fontSize: 16 }}
-          dropdownIconColor={"#000"}
-        >
-          <Picker.Item label="Cidade" value="" />
-          {cities.map((city: any) => (
-            <Picker.Item key={city} label={city} value={city} />
-          ))}
-        </Picker>
-      </View>
-      <View
-        style={{
-          marginBottom: 10,
-          borderColor: themeColors.black,
-          borderWidth: 2,
-          borderRadius: 12,
-          paddingHorizontal: 12,
-          backgroundColor: themeColors.white || "#FFF",
-          height: 60,
-          justifyContent: "center",
-        }}
-      >
-        <Picker
-          selectedValue={selectedSpeciality}
-          onValueChange={(value) => setSelectedSpeciality(value)}
-          style={pickerStyle}
-          itemStyle={{ height: 60, fontSize: 16 }}
-          dropdownIconColor={"#000"}
-        >
-          <Picker.Item label="Serviço de Saúde" value="" />
-          {specialities.map((s: any) => (
-            <Picker.Item key={s} label={s} value={s} />
-          ))}
-        </Picker>
-      </View>
+        themeColors={themeColors}
+      />
+      <CustomSelect
+        label="Cidade"
+        value={selectedCity}
+        options={cities}
+        onValueChange={setSelectedCity}
+        themeColors={themeColors}
+        enabled={cities.length > 0}
+      />
+      <CustomSelect
+        label="Serviço de Saúde"
+        value={selectedSpeciality}
+        options={specialities}
+        onValueChange={setSelectedSpeciality}
+        themeColors={themeColors}
+      />
 
       {/* Filtro "Aberto" - Campo de texto livre */}
       {setOpenNowText && (
@@ -122,7 +63,7 @@ export default function AcredidetFilters({
             Filtrar por horário
           </Text>
           <TextInput
-            placeholder="Ex: Segunda a Sexta, 08h às 18h"
+            placeholder="Digite tua busca…"
             placeholderTextColor="#999"
             value={openNowText}
             onChangeText={setOpenNowText}
