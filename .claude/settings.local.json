@@ -10,7 +10,14 @@
       "Bash(npx expo start:*)",
       "Bash(npm uninstall:*)",
       "Bash(dir:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(eas build:list:*)",
+      "Bash(eas build:view:*)",
+      "Bash(eas submit:*)",
+      "Bash(eas submission:view:*)",
+      "Bash(eas submit:list:*)",
+      "Bash(curl:*)",
+      "Bash(eas build:*)"
     ],
     "deny": [],
     "ask": []
