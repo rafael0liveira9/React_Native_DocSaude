@@ -8,10 +8,12 @@ import ThemeContext from "@/controllers/context";
 import { menuItens } from "@/controllers/utils";
 import * as SecureStore from "expo-secure-store";
 import * as WebBrowser from "expo-web-browser";
+import { useRouter } from "expo-router";
 import { useContext, useEffect, useState } from "react";
 import { ActivityIndicator, Linking, View } from "react-native";
 
 export default function HomeScreen() {
+  const router = useRouter();
   const themeColors = Colors["dark"];
   const ctx = useContext(ThemeContext)!;
   const { user, setUser, cards, setCards } = ctx;
@@ -30,23 +32,39 @@ export default function HomeScreen() {
     getUserData();
   }, []);
 
+  async function forceLogout() {
+    console.log("[HOME] Forçando logout - dados do usuário inválidos");
+    await SecureStore.deleteItemAsync("user-token");
+    await SecureStore.deleteItemAsync("user-id");
+    await SecureStore.deleteItemAsync("expo-push-token");
+    router.replace("/(auth)");
+  }
+
   async function getUserData() {
     try {
       setIsLoadingUser(true);
       const userId = await SecureStore.getItemAsync("user-id");
       const token = await SecureStore.getItemAsync("user-token");
 
-      if (userId && token) {
-        const data = await GetMyData(Number(userId), token);
-        if (data) {
-          setUser(data);
-          buildCardsArray(data);
-        } else {
-          console.log("Não foi possível carregar os dados do usuário");
-        }
+      if (!userId || !token) {
+        console.log("[HOME] Token ou userId ausente, deslogando");
+        await forceLogout();
+        return;
+      }
+
+      const data = await GetMyData(Number(userId), token);
+      if (data) {
+        setUser(data);
+        buildCardsArray(data);
+      } else {
+        console.log("Não foi possível carregar os dados do usuário");
+        await forceLogout();
+        return;
       }
     } catch (error) {
       console.log("Erro ao buscar dados do usuário:", error);
+      await forceLogout();
+      return;
     } finally {
       setIsLoadingUser(false);
     }

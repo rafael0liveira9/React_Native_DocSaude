@@ -2,6 +2,7 @@ import api from "./config";
 
 export interface Specialty {
   id: number;
+  program_id: number;
   speciality_id: number | null;
   speciality_name: string;
   occupation_id: number | null;
@@ -112,18 +113,25 @@ class TelemedicinaService {
     specialityId?: number,
     occupationId?: number,
     date?: string,
-    daysAhead?: number
+    daysAhead?: number,
+    programId?: number,
+    rule?: 'daysProgramCalendar' | 'specialistSchedules'
   ): Promise<SlotsResponse> {
     try {
-      console.log("[TELEMEDICINA] Buscando slots de agendamento");
+      console.log("[TELEMEDICINA] Buscando slots de agendamento", { programId, rule });
 
-      const response = await api.post("/telemedicina/schedule/slots", {
+      const body: any = {
         assinante_id: assinanteId,
         speciality_id: specialityId,
         occupation_id: occupationId,
         date: date || new Date().toISOString().split("T")[0],
         days_ahead: daysAhead || 30,
-      });
+      };
+
+      if (programId) body.program_id = programId;
+      if (rule) body.rule = rule;
+
+      const response = await api.post("/telemedicina/schedule/slots", body);
 
       if (response.data.success) {
         return response.data.data;
@@ -180,6 +188,7 @@ class TelemedicinaService {
     professionalName?: string;
     professionalCrm?: string;
     doubleBooking?: boolean;
+    programId?: number;
   }): Promise<any> {
     try {
       console.log("[TELEMEDICINA] Agendando consulta:", { date: params.date, time: params.time });
@@ -196,6 +205,7 @@ class TelemedicinaService {
         professional_name: params.professionalName,
         professional_crm: params.professionalCrm,
         double_booking: params.doubleBooking || false,
+        program_id: params.programId,
       });
 
       if (response.data.success) {
@@ -207,6 +217,26 @@ class TelemedicinaService {
     } catch (error) {
       console.error("[TELEMEDICINA] Erro ao agendar:", error);
       throw error;
+    }
+  }
+
+  /**
+   * Verificar atendimento ativo para retomada
+   */
+  async getActiveAppointment(assinanteId: number): Promise<any> {
+    try {
+      const response = await api.get("/telemedicina/appointment/active", {
+        params: { assinante_id: assinanteId },
+      });
+
+      if (response.data.success) {
+        return response.data.data;
+      }
+
+      return null;
+    } catch (error) {
+      console.error("[TELEMEDICINA] Erro ao verificar atendimento ativo:", error);
+      return null;
     }
   }
 

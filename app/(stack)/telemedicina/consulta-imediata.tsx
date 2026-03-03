@@ -1,6 +1,6 @@
 import { Colors } from "@/constants/Colors";
 import { Fonts } from "@/constants/Fonts";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useState, useRef } from "react";
 import {
@@ -15,7 +15,7 @@ import telemedicinaService from "@/api/telemedicina";
 import Toast from "react-native-toast-message";
 import Pusher from "pusher-js/react-native";
 
-type ConsultaStatus = "creating" | "waiting" | "assigned" | "error";
+type ConsultaStatus = "creating" | "resuming" | "waiting" | "assigned" | "error";
 
 // Credenciais do Pusher (obter da Teladoc)
 const PUSHER_CONFIG = {
@@ -25,15 +25,24 @@ const PUSHER_CONFIG = {
 
 export default function ConsultaImediataScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ appointmentId?: string }>();
   const themeColors = Colors["dark"];
-  const [status, setStatus] = useState<ConsultaStatus>("creating");
-  const [appointmentId, setAppointmentId] = useState<number | null>(null);
+  const [status, setStatus] = useState<ConsultaStatus>(
+    params.appointmentId ? "resuming" : "creating"
+  );
+  const [appointmentId, setAppointmentId] = useState<number | null>(
+    params.appointmentId ? parseInt(params.appointmentId) : null
+  );
   const [estimatedWait, setEstimatedWait] = useState<number | null>(null);
   const pusherRef = useRef<Pusher | null>(null);
   const channelRef = useRef<any>(null);
 
   useEffect(() => {
-    createAppointment();
+    if (params.appointmentId) {
+      resumeAppointment(parseInt(params.appointmentId));
+    } else {
+      createAppointment();
+    }
 
     // Cleanup Pusher on unmount
     return () => {
@@ -60,12 +69,12 @@ export default function ConsultaImediataScreen() {
       const channel = pusherRef.current.subscribe(pusherConfig.channel);
       channelRef.current = channel;
 
-      // Evento: Médico foi alocado para a consulta
+      // Evento: Medico foi alocado para a consulta
       channel.bind("reserved_attendance", (data: any) => {
-        console.log("[CONSULTA_IMEDIATA] Médico alocado:", data);
+        console.log("[CONSULTA_IMEDIATA] Medico alocado:", data);
         Toast.show({
           type: "success",
-          text1: "Médico encontrado!",
+          text1: "Medico encontrado!",
           text2: "Preparando videochamada...",
         });
         setStatus("assigned");
@@ -83,7 +92,7 @@ export default function ConsultaImediataScreen() {
         Toast.show({
           type: "info",
           text1: "Consulta finalizada",
-          text2: "Obrigado por usar nosso serviço",
+          text2: "Obrigado por usar nosso servico",
         });
         router.back();
       });
@@ -98,7 +107,7 @@ export default function ConsultaImediataScreen() {
     try {
       if (!appointmentId) return;
 
-      console.log("[CONSULTA_IMEDIATA] Obtendo token de vídeo...");
+      console.log("[CONSULTA_IMEDIATA] Obtendo token de video...");
 
       const videoData = await telemedicinaService.getVideoToken(appointmentId);
 
@@ -123,14 +132,59 @@ export default function ConsultaImediataScreen() {
     }
   };
 
+  const resumeAppointment = async (existingAppointmentId: number) => {
+    try {
+      console.log("[CONSULTA_IMEDIATA] Retomando atendimento:", existingAppointmentId);
+
+      const appointmentData = await telemedicinaService.getAppointmentStatus(existingAppointmentId);
+
+      if (!appointmentData) {
+        console.warn("[CONSULTA_IMEDIATA] Atendimento nao encontrado, criando novo");
+        createAppointment();
+        return;
+      }
+
+      setAppointmentId(existingAppointmentId);
+
+      // Map DB status to screen status
+      if (appointmentData.status === "assigned" || appointmentData.status === "in_progress") {
+        setStatus("assigned");
+      } else {
+        setStatus("waiting");
+      }
+
+      // Reconectar ao Pusher se houver canal salvo
+      if (appointmentData.pusher_channel) {
+        setupPusher({
+          channel: appointmentData.pusher_channel,
+          event: appointmentData.pusher_event,
+        });
+      }
+
+      Toast.show({
+        type: "info",
+        text1: "Atendimento retomado",
+        text2: appointmentData.status === "waiting"
+          ? "Aguardando medico disponivel..."
+          : "Conectando...",
+      });
+
+    } catch (error: any) {
+      console.error("[CONSULTA_IMEDIATA] Erro ao retomar atendimento:", error);
+      // Fallback: create new appointment
+      createAppointment();
+    }
+  };
+
   const createAppointment = async () => {
     try {
+      setStatus("creating");
       const userIdStr = await SecureStore.getItemAsync("user-id");
 
       if (!userIdStr) {
         Toast.show({
           type: "error",
-          text1: "Erro ao carregar dados do usuário",
+          text1: "Erro ao carregar dados do usuario",
         });
         router.back();
         return;
@@ -138,7 +192,7 @@ export default function ConsultaImediataScreen() {
 
       const userId = parseInt(userIdStr);
 
-      console.log("[CONSULTA_IMEDIATA] Criando consulta para usuário:", userId);
+      console.log("[CONSULTA_IMEDIATA] Criando consulta para usuario:", userId);
 
       // Cria consulta imediata
       const appointment = await telemedicinaService.createImmediateAppointment(userId);
@@ -148,17 +202,17 @@ export default function ConsultaImediataScreen() {
 
       console.log("[CONSULTA_IMEDIATA] Consulta criada:", appointment);
 
-      // Conectar ao Pusher para receber notificações em tempo real
+      // Conectar ao Pusher para receber notificacoes em tempo real
       if (appointment.pusher) {
         setupPusher(appointment.pusher);
       } else {
-        console.warn("[CONSULTA_IMEDIATA] Nenhuma configuração Pusher retornada");
+        console.warn("[CONSULTA_IMEDIATA] Nenhuma configuracao Pusher retornada");
       }
 
       Toast.show({
         type: "success",
         text1: "Consulta criada",
-        text2: "Aguardando médico disponível...",
+        text2: "Aguardando medico disponivel...",
       });
 
     } catch (error: any) {
@@ -166,7 +220,7 @@ export default function ConsultaImediataScreen() {
       setStatus("error");
       Alert.alert(
         "Erro",
-        "Não foi possível criar a consulta. Tente novamente.",
+        "Nao foi possivel criar a consulta. Tente novamente.",
         [{ text: "OK", onPress: () => router.back() }]
       );
     }
@@ -177,7 +231,7 @@ export default function ConsultaImediataScreen() {
       "Cancelar Consulta",
       "Deseja realmente cancelar esta consulta?",
       [
-        { text: "Não", style: "cancel" },
+        { text: "Nao", style: "cancel" },
         {
           text: "Sim",
           style: "destructive",
@@ -217,6 +271,14 @@ export default function ConsultaImediataScreen() {
           </>
         );
 
+      case "resuming":
+        return (
+          <>
+            <ActivityIndicator size="large" color={themeColors.tint} />
+            <Text style={styles.statusText}>Retomando atendimento...</Text>
+          </>
+        );
+
       case "waiting":
         return (
           <>
@@ -229,11 +291,11 @@ export default function ConsultaImediataScreen() {
               />
             </View>
             <Text style={[styles.statusTitle, { color: themeColors.text }]}>
-              Procurando médico disponível
+              Procurando medico disponivel
             </Text>
             <Text style={styles.statusDescription}>
-              Você está na fila de atendimento.{"\n"}
-              Em breve um médico irá atendê-lo.
+              Voce esta na fila de atendimento.{"\n"}
+              Em breve um medico ira atende-lo.
             </Text>
 
             {estimatedWait && (
@@ -245,8 +307,8 @@ export default function ConsultaImediataScreen() {
             <View style={styles.infoBox}>
               <Text style={styles.infoIcon}>💡</Text>
               <Text style={styles.infoText}>
-                Mantenha a câmera e o microfone do seu dispositivo funcionando.
-                Você será notificado quando um médico aceitar a consulta.
+                Mantenha a camera e o microfone do seu dispositivo funcionando.
+                Voce sera notificado quando um medico aceitar a consulta.
               </Text>
             </View>
 
@@ -265,7 +327,7 @@ export default function ConsultaImediataScreen() {
           <>
             <Text style={styles.successIcon}>✅</Text>
             <Text style={[styles.statusTitle, { color: themeColors.text }]}>
-              Médico encontrado!
+              Medico encontrado!
             </Text>
             <Text style={styles.statusDescription}>
               Iniciando videochamada...
@@ -282,7 +344,7 @@ export default function ConsultaImediataScreen() {
               Erro ao criar consulta
             </Text>
             <Text style={styles.statusDescription}>
-              Não foi possível criar a consulta. Por favor, tente novamente.
+              Nao foi possivel criar a consulta. Por favor, tente novamente.
             </Text>
             <TouchableOpacity
               style={[styles.button, { backgroundColor: themeColors.tint }]}
