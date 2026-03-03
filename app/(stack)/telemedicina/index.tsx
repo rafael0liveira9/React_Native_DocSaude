@@ -48,22 +48,22 @@ export default function TelemedicinaMenuScreen() {
         userIdFromStore
       );
 
-      const isRegistered = await telemedicinaService.isRegistered();
-
-      if (!isRegistered) {
-        console.log("[TELEMEDICINA_SCREEN] Registrando usuário...");
-        await telemedicinaService.register(parseInt(userIdFromStore));
-        console.log("[TELEMEDICINA_SCREEN] Usuário registrado!");
-      }
-
       await telemedicinaService.validate(parseInt(userIdFromStore));
       console.log("[TELEMEDICINA_SCREEN] Acesso validado!");
     } catch (error: any) {
       console.error("[TELEMEDICINA_SCREEN] Erro ao inicializar:", error);
-      setHasError(true);
 
-      // Não mostra erro de autenticação do backend aqui
-      // Permitir acesso mesmo com erro de configuração
+      if (error.response?.data?.error === "telemedicina_indisponivel") {
+        Toast.show({
+          type: "error",
+          text1: "Telemedicina não disponível",
+          text2: "O serviço de telemedicina não está disponível para este usuário",
+        });
+        router.back();
+        return;
+      }
+
+      setHasError(true);
       Toast.show({
         type: "info",
         text1: "Serviço em configuração",
@@ -74,7 +74,7 @@ export default function TelemedicinaMenuScreen() {
     }
   };
 
-  const handleConsultaNow = () => {
+  const handleAgendarConsulta = () => {
     if (hasError) {
       Toast.show({
         type: "info",
@@ -83,7 +83,7 @@ export default function TelemedicinaMenuScreen() {
       });
       return;
     }
-    router.push("/(stack)/telemedicina/consulta-imediata" as any);
+    router.push("/(stack)/telemedicina/agendar-consulta" as any);
   };
 
   if (loading) {
@@ -127,29 +127,29 @@ export default function TelemedicinaMenuScreen() {
 
         <View style={styles.header}>
           <Text style={[styles.subtitle, { color: "#999" }]}>
-            Escolha como deseja ser atendido
+            Agende sua consulta com um especialista
           </Text>
         </View>
 
         <View style={styles.cardsContainer}>
           <TouchableOpacity
             style={[styles.card, styles.primaryCard]}
-            onPress={handleConsultaNow}
+            onPress={handleAgendarConsulta}
             activeOpacity={0.8}
           >
             <View style={styles.cardHeader}>
               <View
                 style={[styles.iconContainer, { backgroundColor: "#ffffff" }]}
               >
-                <Text style={styles.cardIcon}>🩺</Text>
+                <Ionicons name="calendar-outline" size={28} color="#032FEA" />
               </View>
               <View style={styles.cardBadge}>
-                <Text style={styles.badgeText}>Rápido</Text>
+                <Text style={styles.badgeText}>Agendar</Text>
               </View>
             </View>
-            <Text style={styles.cardTitle}>Consultar Agora</Text>
+            <Text style={styles.cardTitle}>Agendar Consulta</Text>
             <Text style={styles.cardDescription}>
-              Atendimento imediato com médico disponível online
+              Escolha especialidade, data e horário para sua teleconsulta
             </Text>
           </TouchableOpacity>
         </View>
@@ -159,19 +159,19 @@ export default function TelemedicinaMenuScreen() {
           <View style={styles.infoItem}>
             <Text style={styles.infoNumber}>1</Text>
             <Text style={styles.infoText}>
-              Clique em &quot;Consultar Agora&quot; para iniciar
+              Escolha a especialidade desejada
             </Text>
           </View>
           <View style={styles.infoItem}>
             <Text style={styles.infoNumber}>2</Text>
             <Text style={styles.infoText}>
-              Aguarde enquanto conectamos você a um médico
+              Selecione a data e o horário disponível
             </Text>
           </View>
           <View style={styles.infoItem}>
             <Text style={styles.infoNumber}>3</Text>
             <Text style={styles.infoText}>
-              Realize sua consulta por videochamada
+              Confirme o profissional e realize sua teleconsulta por vídeo
             </Text>
           </View>
         </View>
@@ -243,12 +243,6 @@ const styles = StyleSheet.create({
   primaryCard: {
     backgroundColor: "#00E276",
   },
-  secondaryCard: {
-    backgroundColor: "#0b1635",
-  },
-  tertiaryCard: {
-    backgroundColor: "#34495e",
-  },
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -261,9 +255,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
-  },
-  cardIcon: {
-    fontSize: 28,
   },
   cardBadge: {
     backgroundColor: "#032FEA",
@@ -289,21 +280,6 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.regular,
     color: "rgba(255, 255, 255, 0.9)",
     lineHeight: 20,
-  },
-  comingSoonBadge: {
-    position: "absolute",
-    top: 16,
-    right: 16,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  comingSoonText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
-    fontFamily: Fonts.semiBold,
   },
   infoSection: {
     backgroundColor: "#FFFFFF",

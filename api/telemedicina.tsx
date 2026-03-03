@@ -1,56 +1,40 @@
 import api from "./config";
-import * as SecureStore from "expo-secure-store";
+
+export interface Specialty {
+  id: number;
+  speciality_id: number | null;
+  speciality_name: string;
+  occupation_id: number | null;
+  icon_name: string;
+  display_order: number;
+  category: 'medical' | 'wellness';
+}
+
+export interface SpecialtiesResponse {
+  medical: Specialty[];
+  wellness: Specialty[];
+}
+
+export interface Slot {
+  date: string;
+  time: string;
+  timestamp: number;
+  user_schedule_id: number;
+  professional_name: string;
+  professional_crm?: string;
+  speciality_id?: number;
+  double_booking: boolean;
+}
+
+export interface SlotsResponse {
+  slots: Slot[];
+  dates_available: string[];
+}
 
 /**
  * Serviço de Telemedicina - Integração com Teladoc
  */
 class TelemedicinaService {
-  /**
-   * Verifica se usuário já está registrado na telemedicina
-   */
-  async isRegistered(): Promise<boolean> {
-    try {
-      const registered = await SecureStore.getItemAsync("telemedicina_registered");
-      return registered === "true";
-    } catch (error) {
-      console.error("[TELEMEDICINA] Erro ao verificar registro:", error);
-      return false;
-    }
-  }
-
-  /**
-   * Registra usuário na telemedicina (apenas primeira vez)
-   */
-  async register(assinanteId: number): Promise<boolean> {
-    try {
-      console.log("[TELEMEDICINA] Registrando assinante:", assinanteId);
-
-      const response = await api.post("/telemedicina/register", {
-        assinante_id: assinanteId,
-      });
-
-      if (response.data.success) {
-        await SecureStore.setItemAsync("telemedicina_registered", "true");
-        console.log("[TELEMEDICINA] Assinante registrado com sucesso");
-        return true;
-      }
-
-      return false;
-    } catch (error: any) {
-      console.error("[TELEMEDICINA] Erro ao registrar:", error.response?.data || error.message);
-
-      // Se erro for "já registrado", marca como registrado
-      if (error.response?.status === 400 &&
-          error.response?.data?.error?.includes("já está registrado")) {
-        await SecureStore.setItemAsync("telemedicina_registered", "true");
-        console.log("[TELEMEDICINA] Assinante já estava registrado");
-        return true;
-      }
-
-      throw error;
-    }
-  }
-
   /**
    * Valida acesso (obtém token de telemedicina)
    */
@@ -99,7 +83,61 @@ class TelemedicinaService {
   }
 
   /**
-   * Buscar horários disponíveis
+   * Buscar especialidades para agendamento
+   */
+  async getSpecialties(assinanteId: number): Promise<SpecialtiesResponse> {
+    try {
+      console.log("[TELEMEDICINA] Buscando especialidades");
+
+      const response = await api.get("/telemedicina/schedule/specialties", {
+        params: { assinante_id: assinanteId },
+      });
+
+      if (response.data.success) {
+        return response.data.data;
+      }
+
+      return { medical: [], wellness: [] };
+    } catch (error) {
+      console.error("[TELEMEDICINA] Erro ao buscar especialidades:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Buscar slots disponiveis (novo endpoint com POST rules)
+   */
+  async getScheduleSlots(
+    assinanteId: number,
+    specialityId?: number,
+    occupationId?: number,
+    date?: string,
+    daysAhead?: number
+  ): Promise<SlotsResponse> {
+    try {
+      console.log("[TELEMEDICINA] Buscando slots de agendamento");
+
+      const response = await api.post("/telemedicina/schedule/slots", {
+        assinante_id: assinanteId,
+        speciality_id: specialityId,
+        occupation_id: occupationId,
+        date: date || new Date().toISOString().split("T")[0],
+        days_ahead: daysAhead || 30,
+      });
+
+      if (response.data.success) {
+        return response.data.data;
+      }
+
+      return { slots: [], dates_available: [] };
+    } catch (error) {
+      console.error("[TELEMEDICINA] Erro ao buscar slots:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Buscar horários disponíveis (legado)
    */
   async getAvailableSlots(
     assinanteId: number,
@@ -111,7 +149,7 @@ class TelemedicinaService {
       const response = await api.get("/telemedicina/appointment/slots", {
         params: {
           assinante_id: assinanteId,
-          date: date, // Formato: YYYY-MM-DD
+          date: date,
           program_id: 7,
         },
       });
@@ -128,23 +166,36 @@ class TelemedicinaService {
   }
 
   /**
-   * Agendar consulta
+   * Agendar consulta (reescrito com novos params)
    */
-  async scheduleAppointment(
-    assinanteId: number,
-    date: string,
-    time: string,
-    slotId?: string
-  ): Promise<any> {
+  async scheduleAppointment(params: {
+    assinanteId: number;
+    date: string;
+    time: string;
+    timestamp?: number;
+    userScheduleId?: number;
+    specialityId?: number;
+    specialityName?: string;
+    occupationId?: number;
+    professionalName?: string;
+    professionalCrm?: string;
+    doubleBooking?: boolean;
+  }): Promise<any> {
     try {
-      console.log("[TELEMEDICINA] Agendando consulta:", { date, time });
+      console.log("[TELEMEDICINA] Agendando consulta:", { date: params.date, time: params.time });
 
       const response = await api.post("/telemedicina/appointment/schedule", {
-        assinante_id: assinanteId,
-        program_id: 7,
-        date: date,
-        time: time,
-        slot_id: slotId,
+        assinante_id: params.assinanteId,
+        date: params.date,
+        time: params.time,
+        timestamp: params.timestamp,
+        user_schedule_id: params.userScheduleId,
+        speciality_id: params.specialityId,
+        speciality_name: params.specialityName,
+        occupation_id: params.occupationId,
+        professional_name: params.professionalName,
+        professional_crm: params.professionalCrm,
+        double_booking: params.doubleBooking || false,
       });
 
       if (response.data.success) {
