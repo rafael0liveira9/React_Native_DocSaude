@@ -103,7 +103,7 @@ export default function ConsultaImediataScreen() {
         console.log("[PUSHER] >>> MEDICO ALOCADO:", data);
         Toast.show({
           type: "success",
-          text1: "Medico encontrado!",
+          text1: "Médico encontrado!",
           text2: "Preparando videochamada...",
         });
         setStatus("assigned");
@@ -121,7 +121,7 @@ export default function ConsultaImediataScreen() {
         Toast.show({
           type: "info",
           text1: "Consulta finalizada",
-          text2: "Obrigado por usar nosso servico",
+          text2: "Obrigado por usar nosso serviço",
         });
         router.back();
       });
@@ -191,7 +191,7 @@ export default function ConsultaImediataScreen() {
       Toast.show({
         type: "info",
         text1: appointment.is_resuming ? "Atendimento retomado" : "Consulta criada",
-        text2: "Aguardando medico disponivel...",
+        text2: "Aguardando médico disponível...",
       });
 
     } catch (error: any) {
@@ -208,7 +208,7 @@ export default function ConsultaImediataScreen() {
       if (!userIdStr) {
         Toast.show({
           type: "error",
-          text1: "Erro ao carregar dados do usuario",
+          text1: "Erro ao carregar dados do usuário",
         });
         router.back();
         return;
@@ -236,7 +236,7 @@ export default function ConsultaImediataScreen() {
       Toast.show({
         type: "success",
         text1: "Consulta criada",
-        text2: "Aguardando medico disponivel...",
+        text2: "Aguardando médico disponível...",
       });
 
     } catch (error: any) {
@@ -244,7 +244,7 @@ export default function ConsultaImediataScreen() {
       setStatus("error");
       Alert.alert(
         "Erro",
-        "Nao foi possivel criar a consulta. Tente novamente.",
+        "Não foi possível criar a consulta. Tente novamente.",
         [{ text: "OK", onPress: () => router.back() }]
       );
     }
@@ -255,7 +255,7 @@ export default function ConsultaImediataScreen() {
       "Cancelar Consulta",
       "Deseja realmente cancelar esta consulta?",
       [
-        { text: "Nao", style: "cancel" },
+        { text: "Não", style: "cancel" },
         {
           text: "Sim",
           style: "destructive",
@@ -315,11 +315,11 @@ export default function ConsultaImediataScreen() {
               />
             </View>
             <Text style={[styles.statusTitle, { color: themeColors.text }]}>
-              Procurando medico disponivel
+              Procurando médico disponível
             </Text>
             <Text style={styles.statusDescription}>
-              Voce esta na fila de atendimento.{"\n"}
-              Em breve um medico ira atende-lo.
+              Você está na fila de atendimento.{"\n"}
+              Em breve um médico irá atendê-lo.
             </Text>
 
             {estimatedWait && (
@@ -331,8 +331,8 @@ export default function ConsultaImediataScreen() {
             <View style={styles.infoBox}>
               <Text style={styles.infoIcon}>💡</Text>
               <Text style={styles.infoText}>
-                Mantenha a camera e o microfone do seu dispositivo funcionando.
-                Voce sera notificado quando um medico aceitar a consulta.
+                Mantenha a câmera e o microfone do seu dispositivo funcionando.
+                Você será notificado quando um médico aceitar a consulta.
               </Text>
             </View>
 
@@ -351,7 +351,7 @@ export default function ConsultaImediataScreen() {
           <>
             <Text style={styles.successIcon}>✅</Text>
             <Text style={[styles.statusTitle, { color: themeColors.text }]}>
-              Medico encontrado!
+              Médico encontrado!
             </Text>
             <Text style={styles.statusDescription}>
               Iniciando videochamada...
@@ -368,7 +368,7 @@ export default function ConsultaImediataScreen() {
               Erro ao criar consulta
             </Text>
             <Text style={styles.statusDescription}>
-              Nao foi possivel criar a consulta. Por favor, tente novamente.
+              Não foi possível criar a consulta. Por favor, tente novamente.
             </Text>
             <TouchableOpacity
               style={[styles.button, { backgroundColor: themeColors.tint }]}

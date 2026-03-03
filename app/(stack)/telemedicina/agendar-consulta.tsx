@@ -27,7 +27,7 @@ type Step = "specialty" | "date" | "time" | "professional";
 type ScheduleMode = "byTime" | "byProfessional";
 
 const MONTH_NAMES = [
-  "Janeiro", "Fevereiro", "Marco", "Abril", "Maio", "Junho",
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 const DAY_NAMES = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
@@ -110,7 +110,7 @@ export default function AgendarConsultaScreen() {
       setCurrentStep("date");
     } catch (error) {
       console.error("Erro ao carregar slots:", error);
-      Toast.show({ type: "error", text1: "Erro ao buscar horarios disponiveis" });
+      Toast.show({ type: "error", text1: "Erro ao buscar horários disponíveis" });
     } finally {
       setLoading(false);
     }
@@ -141,7 +141,7 @@ export default function AgendarConsultaScreen() {
       setSlotsData(data);
     } catch (error) {
       console.error("Erro ao carregar slots:", error);
-      Toast.show({ type: "error", text1: "Erro ao buscar horarios disponiveis" });
+      Toast.show({ type: "error", text1: "Erro ao buscar horários disponíveis" });
     } finally {
       setLoading(false);
     }
@@ -298,7 +298,7 @@ export default function AgendarConsultaScreen() {
       console.error("Erro ao confirmar agendamento:", error);
       Alert.alert(
         "Erro ao agendar",
-        error.response?.data?.error || "Nao foi possivel confirmar o agendamento. Tente novamente."
+        error.response?.data?.error || "Não foi possível confirmar o agendamento. Tente novamente."
       );
     } finally {
       setLoading(false);
@@ -356,7 +356,7 @@ export default function AgendarConsultaScreen() {
         <Text style={[styles.pageTitle, { color: themeColors.text }]} numberOfLines={1}>
           {currentStep === "specialty" && "Selecione a especialidade"}
           {currentStep === "date" && (selectedSpecialty?.speciality_name || "Agendar Consulta")}
-          {currentStep === "time" && (selectedSpecialty?.speciality_name || "Escolha o horario")}
+          {currentStep === "time" && (selectedSpecialty?.speciality_name || "Escolha o horário")}
           {currentStep === "professional" && "Escolher profissional"}
         </Text>
         <View style={{ width: 28 }} />
@@ -427,7 +427,7 @@ export default function AgendarConsultaScreen() {
           )}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>Nenhuma especialidade disponivel</Text>
+              <Text style={styles.emptyText}>Nenhuma especialidade disponível</Text>
             </View>
           }
         />
@@ -443,7 +443,7 @@ export default function AgendarConsultaScreen() {
           {/* Mode Toggle */}
           {renderModeToggle()}
 
-          <Text style={styles.sectionTitle}>PROFISSIONAIS DISPONIVEIS</Text>
+          <Text style={styles.sectionTitle}>PROFISSIONAIS DISPONÍVEIS</Text>
 
           {uniqueProfessionals.map((slot, index) => (
             <TouchableOpacity
@@ -470,7 +470,7 @@ export default function AgendarConsultaScreen() {
 
           {uniqueProfessionals.length === 0 && (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>Nenhum profissional disponivel</Text>
+              <Text style={styles.emptyText}>Nenhum profissional disponível</Text>
             </View>
           )}
         </ScrollView>
@@ -594,7 +594,7 @@ export default function AgendarConsultaScreen() {
             onPress={() => setCurrentStep("time")}
             activeOpacity={0.8}
           >
-            <Text style={styles.nextButtonText}>Proximo</Text>
+            <Text style={styles.nextButtonText}>Próximo</Text>
             <Ionicons name="arrow-forward" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -611,7 +611,7 @@ export default function AgendarConsultaScreen() {
         >
           <Ionicons name="time-outline" size={16} color={scheduleMode === "byTime" ? "#fff" : "#999"} />
           <Text style={[styles.modeToggleText, scheduleMode === "byTime" && styles.modeToggleTextActive]}>
-            Por horario
+            Por horário
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -665,7 +665,7 @@ export default function AgendarConsultaScreen() {
         )}
 
         {/* Times Grid */}
-        <Text style={styles.sectionTitle}>HORARIOS DISPONIVEIS</Text>
+        <Text style={styles.sectionTitle}>HORÁRIOS DISPONÍVEIS</Text>
 
         <View style={styles.timesGrid}>
           {timesForSelectedDate.map((time) => {
@@ -687,7 +687,7 @@ export default function AgendarConsultaScreen() {
 
         {timesForSelectedDate.length === 0 && (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Nenhum horario disponivel nesta data</Text>
+            <Text style={styles.emptyText}>Nenhum horário disponível nesta data</Text>
           </View>
         )}
 
@@ -713,7 +713,7 @@ export default function AgendarConsultaScreen() {
               onPress={() => setCurrentStep("professional")}
               activeOpacity={0.8}
             >
-              <Text style={styles.nextButtonText}>Proximo</Text>
+              <Text style={styles.nextButtonText}>Próximo</Text>
               <Ionicons name="arrow-forward" size={20} color="#fff" />
             </TouchableOpacity>
           )}
@@ -731,15 +731,15 @@ export default function AgendarConsultaScreen() {
           <View style={styles.summaryRow}>
             <Ionicons name="calendar-outline" size={18} color="#032FEA" />
             <Text style={styles.summaryValue}>
-              DATA E HORARIO: {selectedDate ? formatDateBR(selectedDate) : ""} - {selectedTime}
+              DATA E HORÁRIO: {selectedDate ? formatDateBR(selectedDate) : ""} - {selectedTime}
             </Text>
           </View>
         </View>
 
         {/* Professionals List */}
-        <Text style={styles.sectionTitle}>PROFISSIONAIS DISPONIVEIS</Text>
+        <Text style={styles.sectionTitle}>PROFISSIONAIS DISPONÍVEIS</Text>
         <Text style={styles.sectionHint}>
-          Toque no botao para conhecer mais sobre o profissional:
+          Toque no botão para conhecer mais sobre o profissional:
         </Text>
 
         {professionalsForSlot.map((slot, index) => {
@@ -774,7 +774,7 @@ export default function AgendarConsultaScreen() {
 
         {professionalsForSlot.length === 0 && (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Nenhum profissional disponivel neste horario</Text>
+            <Text style={styles.emptyText}>Nenhum profissional disponível neste horário</Text>
           </View>
         )}
 

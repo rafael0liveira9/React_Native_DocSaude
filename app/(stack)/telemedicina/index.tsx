@@ -62,7 +62,7 @@ export default function TelemedicinaMenuScreen() {
       if (!userIdFromStore) {
         Toast.show({
           type: "error",
-          text1: "Erro ao carregar dados do usuario",
+          text1: "Erro ao carregar dados do usuário",
         });
         router.back();
         return;
@@ -92,8 +92,8 @@ export default function TelemedicinaMenuScreen() {
       if (error.response?.data?.error === "telemedicina_indisponivel") {
         Toast.show({
           type: "error",
-          text1: "Telemedicina nao disponivel",
-          text2: "O servico de telemedicina nao esta disponivel para este usuario",
+          text1: "Telemedicina não disponível",
+          text2: "O serviço de telemedicina não está disponível para este usuário",
         });
         router.back();
         return;
@@ -102,8 +102,8 @@ export default function TelemedicinaMenuScreen() {
       setHasError(true);
       Toast.show({
         type: "info",
-        text1: "Servico em configuracao",
-        text2: "Algumas funcionalidades podem estar indisponiveis",
+        text1: "Serviço em configuração",
+        text2: "Algumas funcionalidades podem estar indisponíveis",
       });
     } finally {
       setLoading(false);
@@ -115,7 +115,7 @@ export default function TelemedicinaMenuScreen() {
     if (hasError) {
       Toast.show({
         type: "info",
-        text1: "Servico temporariamente indisponivel",
+        text1: "Serviço temporariamente indisponível",
         text2: "Por favor, tente novamente mais tarde",
       });
       return;
@@ -127,7 +127,7 @@ export default function TelemedicinaMenuScreen() {
     if (hasError) {
       Toast.show({
         type: "info",
-        text1: "Servico temporariamente indisponivel",
+        text1: "Serviço temporariamente indisponível",
         text2: "Por favor, tente novamente mais tarde",
       });
       return;
@@ -163,7 +163,7 @@ export default function TelemedicinaMenuScreen() {
       >
         <ActivityIndicator size="large" color={themeColors.tint} />
         <Text style={[styles.loadingText, { color: themeColors.text }]}>
-          Conectando ao servico de telemedicina...
+          Conectando ao serviço de telemedicina...
         </Text>
       </View>
     );
@@ -209,7 +209,7 @@ export default function TelemedicinaMenuScreen() {
             </View>
             <View style={styles.resumeTextContainer}>
               <Text style={styles.resumeTitle}>
-                Voce tem um atendimento em andamento
+                Você tem um atendimento em andamento
               </Text>
               <Text style={styles.resumeSubtitle}>
                 {activeAppointment.appointment_type === "immediate"
@@ -217,9 +217,9 @@ export default function TelemedicinaMenuScreen() {
                   : activeAppointment.speciality_name || "Consulta agendada"}
                 {" - "}
                 {activeAppointment.status === "waiting"
-                  ? "Aguardando medico"
+                  ? "Aguardando médico"
                   : activeAppointment.status === "assigned"
-                  ? "Medico encontrado"
+                  ? "Médico encontrado"
                   : "Agendada"}
               </Text>
             </View>
@@ -249,7 +249,7 @@ export default function TelemedicinaMenuScreen() {
             </View>
             <Text style={styles.cardTitle}>Consultar Agora</Text>
             <Text style={styles.cardDescription}>
-              Atendimento com medico de plantao por videochamada
+              Atendimento com médico de plantão por videochamada
             </Text>
           </TouchableOpacity>
 
@@ -271,7 +271,7 @@ export default function TelemedicinaMenuScreen() {
             </View>
             <Text style={styles.cardTitle}>Agendar Consulta</Text>
             <Text style={styles.cardDescription}>
-              Escolha especialidade, data e horario para sua teleconsulta
+              Escolha especialidade, data e horário para sua teleconsulta
             </Text>
           </TouchableOpacity>
         </View>
@@ -287,13 +287,13 @@ export default function TelemedicinaMenuScreen() {
           <View style={styles.infoItem}>
             <Text style={styles.infoNumber}>2</Text>
             <Text style={styles.infoText}>
-              Selecione a especialidade, data e horario disponiveis
+              Selecione a especialidade, data e horário disponíveis
             </Text>
           </View>
           <View style={styles.infoItem}>
             <Text style={styles.infoNumber}>3</Text>
             <Text style={styles.infoText}>
-              Confirme o profissional e realize sua teleconsulta por video
+              Confirme o profissional e realize sua teleconsulta por vídeo
             </Text>
           </View>
         </View>
