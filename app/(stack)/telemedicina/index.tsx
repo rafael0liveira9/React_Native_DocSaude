@@ -3,8 +3,9 @@ import { Colors } from "@/constants/Colors";
 import { Fonts } from "@/constants/Fonts";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import * as SecureStore from "expo-secure-store";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -25,9 +26,31 @@ export default function TelemedicinaMenuScreen() {
   const [activeAppointment, setActiveAppointment] = useState<any>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
-  useEffect(() => {
-    initializeTelemedicina();
-  }, []);
+  const [initialized, setInitialized] = useState(false);
+
+  // Roda na primeira montagem (com loading) e ao voltar para a tela (sem loading)
+  useFocusEffect(
+    useCallback(() => {
+      if (!initialized) {
+        initializeTelemedicina();
+      } else {
+        refreshActiveAppointment();
+      }
+    }, [initialized])
+  );
+
+  const refreshActiveAppointment = async () => {
+    try {
+      const storedId = userId || (await SecureStore.getItemAsync("user-id"));
+      if (!storedId) return;
+      const active = await telemedicinaService.getActiveAppointment(
+        parseInt(storedId.toString())
+      );
+      setActiveAppointment(active);
+    } catch (error) {
+      console.error("[TELEMEDICINA_SCREEN] Erro ao atualizar atendimento ativo:", error);
+    }
+  };
 
   const initializeTelemedicina = async () => {
     try {
@@ -61,8 +84,8 @@ export default function TelemedicinaMenuScreen() {
       );
       if (active) {
         console.log("[TELEMEDICINA_SCREEN] Atendimento ativo encontrado:", active.id);
-        setActiveAppointment(active);
       }
+      setActiveAppointment(active);
     } catch (error: any) {
       console.error("[TELEMEDICINA_SCREEN] Erro ao inicializar:", error);
 
@@ -84,6 +107,7 @@ export default function TelemedicinaMenuScreen() {
       });
     } finally {
       setLoading(false);
+      setInitialized(true);
     }
   };
 
