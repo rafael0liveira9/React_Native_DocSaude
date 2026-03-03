@@ -17,12 +17,6 @@ import Pusher from "pusher-js/react-native";
 
 type ConsultaStatus = "creating" | "resuming" | "waiting" | "assigned" | "error";
 
-// Credenciais do Pusher (obter da Teladoc)
-const PUSHER_CONFIG = {
-  key: "YOUR_PUSHER_KEY", // Substituir pela chave real
-  cluster: "us2",
-};
-
 export default function ConsultaImediataScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ appointmentId?: string }>();
@@ -60,18 +54,53 @@ export default function ConsultaImediataScreen() {
     try {
       console.log("[CONSULTA_IMEDIATA] Configurando Pusher:", pusherConfig);
 
-      // Inicializa Pusher
-      pusherRef.current = new Pusher(PUSHER_CONFIG.key, {
-        cluster: PUSHER_CONFIG.cluster,
+      const pusherKey = pusherConfig.key;
+      const pusherCluster = pusherConfig.cluster || "mt1";
+
+      if (!pusherKey || !pusherConfig.channel) {
+        console.warn("[CONSULTA_IMEDIATA] Pusher key ou channel ausente:", pusherConfig);
+        return;
+      }
+
+      console.log(`[PUSHER] Inicializando: key=${pusherKey}, cluster=${pusherCluster}`);
+      console.log(`[PUSHER] Canal: ${pusherConfig.channel}`);
+
+      // Inicializa Pusher com key e cluster da API
+      pusherRef.current = new Pusher(pusherKey, {
+        cluster: pusherCluster,
+      });
+
+      // Log de estado da conexão
+      pusherRef.current.connection.bind("state_change", (states: any) => {
+        console.log(`[PUSHER] Conexão: ${states.previous} -> ${states.current}`);
+      });
+      pusherRef.current.connection.bind("connected", () => {
+        console.log("[PUSHER] Conectado com sucesso! Socket ID:", pusherRef.current?.connection.socket_id);
+      });
+      pusherRef.current.connection.bind("error", (err: any) => {
+        console.error("[PUSHER] Erro de conexão:", err);
       });
 
       // Inscreve no canal
       const channel = pusherRef.current.subscribe(pusherConfig.channel);
       channelRef.current = channel;
 
+      // Log de subscription
+      channel.bind("pusher:subscription_succeeded", () => {
+        console.log(`[PUSHER] Inscrito no canal: ${pusherConfig.channel}`);
+      });
+      channel.bind("pusher:subscription_error", (err: any) => {
+        console.error(`[PUSHER] Erro ao inscrever no canal:`, err);
+      });
+
+      // Escuta TODOS os eventos do canal para debug
+      channel.bind_global((eventName: string, data: any) => {
+        console.log(`[PUSHER] Evento recebido: "${eventName}"`, JSON.stringify(data));
+      });
+
       // Evento: Medico foi alocado para a consulta
       channel.bind("reserved_attendance", (data: any) => {
-        console.log("[CONSULTA_IMEDIATA] Medico alocado:", data);
+        console.log("[PUSHER] >>> MEDICO ALOCADO:", data);
         Toast.show({
           type: "success",
           text1: "Medico encontrado!",
@@ -82,13 +111,13 @@ export default function ConsultaImediataScreen() {
 
       // Evento: Videochamada iniciada
       channel.bind("start_stream", (data: any) => {
-        console.log("[CONSULTA_IMEDIATA] Iniciando videochamada:", data);
+        console.log("[PUSHER] >>> START_STREAM:", data);
         startVideoCall();
       });
 
       // Evento: Consulta finalizada
       channel.bind("finish_stream", (data: any) => {
-        console.log("[CONSULTA_IMEDIATA] Consulta finalizada:", data);
+        console.log("[PUSHER] >>> FINISH_STREAM:", data);
         Toast.show({
           type: "info",
           text1: "Consulta finalizada",
@@ -97,7 +126,7 @@ export default function ConsultaImediataScreen() {
         router.back();
       });
 
-      console.log("[CONSULTA_IMEDIATA] Pusher conectado com sucesso!");
+      console.log("[PUSHER] Setup completo, aguardando eventos...");
     } catch (error) {
       console.error("[CONSULTA_IMEDIATA] Erro ao configurar Pusher:", error);
     }
@@ -136,43 +165,38 @@ export default function ConsultaImediataScreen() {
     try {
       console.log("[CONSULTA_IMEDIATA] Retomando atendimento:", existingAppointmentId);
 
-      const appointmentData = await telemedicinaService.getAppointmentStatus(existingAppointmentId);
-
-      if (!appointmentData) {
-        console.warn("[CONSULTA_IMEDIATA] Atendimento nao encontrado, criando novo");
-        createAppointment();
+      // Usa createImmediateAppointment que já faz o fluxo de retomada na API
+      // (verifica /patient/get por attendance ativo e retorna Pusher config)
+      const userIdStr = await SecureStore.getItemAsync("user-id");
+      if (!userIdStr) {
+        router.back();
         return;
       }
 
-      setAppointmentId(existingAppointmentId);
+      const appointment = await telemedicinaService.createImmediateAppointment(parseInt(userIdStr));
 
-      // Map DB status to screen status
-      if (appointmentData.status === "assigned" || appointmentData.status === "in_progress") {
-        setStatus("assigned");
+      setAppointmentId(appointment.appointment_id);
+
+      if (appointment.is_resuming) {
+        setStatus("waiting");
       } else {
         setStatus("waiting");
       }
 
-      // Reconectar ao Pusher se houver canal salvo
-      if (appointmentData.pusher_channel) {
-        setupPusher({
-          channel: appointmentData.pusher_channel,
-          event: appointmentData.pusher_event,
-        });
+      // Conectar ao Pusher com key e channel da API
+      if (appointment.pusher) {
+        setupPusher(appointment.pusher);
       }
 
       Toast.show({
         type: "info",
-        text1: "Atendimento retomado",
-        text2: appointmentData.status === "waiting"
-          ? "Aguardando medico disponivel..."
-          : "Conectando...",
+        text1: appointment.is_resuming ? "Atendimento retomado" : "Consulta criada",
+        text2: "Aguardando medico disponivel...",
       });
 
     } catch (error: any) {
       console.error("[CONSULTA_IMEDIATA] Erro ao retomar atendimento:", error);
-      // Fallback: create new appointment
-      createAppointment();
+      setStatus("error");
     }
   };
 

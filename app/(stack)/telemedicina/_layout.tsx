@@ -31,6 +31,13 @@ export default function TelemedicinaLayout() {
         }}
       />
       <Stack.Screen
+        name="agendar-consulta"
+        options={{
+          title: "Agendar Consulta",
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
         name="video-call"
         options={{
           title: "Videochamada",

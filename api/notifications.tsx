@@ -1,40 +1,38 @@
 import api from "./config";
-import { Platform } from "react-native";
+import * as SecureStore from "expo-secure-store";
 
 /**
  * Registra ou atualiza o token FCM do dispositivo no backend
  * @param token Token FCM do dispositivo
- * @param userId ID do usuário (opcional, será pego do token JWT se não fornecido)
+ * @param userId ID do usuário (opcional, será pego do SecureStore se não fornecido)
  */
 export async function registerDeviceToken(
   token: string,
   userId?: number
 ): Promise<boolean> {
   try {
-    const deviceInfo = {
-      token,
-      platform: Platform.OS,
-      deviceId: Platform.select({
-        android: "android_device",
-        ios: "ios_device",
-        default: "unknown_device",
-      }),
-      userId,
-    };
+    let id = userId;
+    if (!id) {
+      const stored = await SecureStore.getItemAsync("user-id");
+      if (stored) id = parseInt(stored);
+    }
 
-    // TODO: Rota do backend ainda não existe
-    // const response = await api.post("/notifications/register-token", deviceInfo);
+    if (!id) {
+      console.warn("registerDeviceToken: userId não disponível, pulando registro");
+      return false;
+    }
 
-    // if (response.data.success) {
-    //   console.log("Token registrado no backend com sucesso");
-    //   return true;
-    // }
+    const response = await api.put(`/assinantes/${id}/firebase-token`, {
+      firebase_token: token,
+    });
 
-    // console.warn("Falha ao registrar token:", response.data);
-    // return false;
+    if (response.data.success) {
+      console.log("Token FCM registrado no backend com sucesso");
+      return true;
+    }
 
-    console.log("Token de notificação gerado (aguardando rota do backend):", token);
-    return true;
+    console.warn("Falha ao registrar token FCM:", response.data);
+    return false;
   } catch (error: any) {
     console.error(
       "Erro ao registrar token no backend:",
@@ -45,28 +43,30 @@ export async function registerDeviceToken(
 }
 
 /**
- * Deleta o token FCM do dispositivo no backend
- * @param token Token FCM a ser removido
+ * Remove o token FCM do dispositivo no backend (envia null)
+ * @param token Token FCM a ser removido (não usado — limpa o campo no backend)
  */
 export async function deleteDeviceTokenFromBackend(
   token: string
 ): Promise<boolean> {
   try {
-    // TODO: Rota do backend ainda não existe
-    // const response = await api.delete("/notifications/delete-token", {
-    //   data: { token },
-    // });
+    const stored = await SecureStore.getItemAsync("user-id");
+    if (!stored) {
+      console.warn("deleteDeviceTokenFromBackend: userId não disponível");
+      return false;
+    }
 
-    // if (response.data.success) {
-    //   console.log("Token deletado do backend com sucesso");
-    //   return true;
-    // }
+    const response = await api.put(`/assinantes/${stored}/firebase-token`, {
+      firebase_token: null,
+    });
 
-    // console.warn("Falha ao deletar token:", response.data);
-    // return false;
+    if (response.data.success) {
+      console.log("Token FCM removido do backend com sucesso");
+      return true;
+    }
 
-    console.log("Token de notificação deletado (aguardando rota do backend):", token);
-    return true;
+    console.warn("Falha ao remover token FCM:", response.data);
+    return false;
   } catch (error: any) {
     console.error(
       "Erro ao deletar token do backend:",
