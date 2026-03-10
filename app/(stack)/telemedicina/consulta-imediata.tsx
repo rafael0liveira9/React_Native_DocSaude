@@ -19,7 +19,7 @@ type ConsultaStatus = "creating" | "resuming" | "waiting" | "assigned" | "error"
 
 export default function ConsultaImediataScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ appointmentId?: string }>();
+  const params = useLocalSearchParams<{ appointmentId?: string; pacienteId?: string; pacienteNome?: string }>();
   const themeColors = Colors["dark"];
   const [status, setStatus] = useState<ConsultaStatus>(
     params.appointmentId ? "resuming" : "creating"
@@ -28,6 +28,7 @@ export default function ConsultaImediataScreen() {
     params.appointmentId ? parseInt(params.appointmentId) : null
   );
   const [estimatedWait, setEstimatedWait] = useState<number | null>(null);
+  const [caseAttendanceId, setCaseAttendanceId] = useState<string | null>(null);
   const pusherRef = useRef<Pusher | null>(null);
   const channelRef = useRef<any>(null);
 
@@ -165,32 +166,22 @@ export default function ConsultaImediataScreen() {
     try {
       console.log("[CONSULTA_IMEDIATA] Retomando atendimento:", existingAppointmentId);
 
-      // Usa createImmediateAppointment que já faz o fluxo de retomada na API
-      // (verifica /patient/get por attendance ativo e retorna Pusher config)
-      const userIdStr = await SecureStore.getItemAsync("user-id");
-      if (!userIdStr) {
-        router.back();
-        return;
-      }
+      // Buscar status do appointment existente (sem criar novo)
+      const statusData = await telemedicinaService.getAppointmentStatus(existingAppointmentId);
 
-      const appointment = await telemedicinaService.createImmediateAppointment(parseInt(userIdStr));
+      setAppointmentId(existingAppointmentId);
+      if (statusData?.case_attendance_id) setCaseAttendanceId(String(statusData.case_attendance_id));
 
-      setAppointmentId(appointment.appointment_id);
+      setStatus("waiting");
 
-      if (appointment.is_resuming) {
-        setStatus("waiting");
-      } else {
-        setStatus("waiting");
-      }
-
-      // Conectar ao Pusher com key e channel da API
-      if (appointment.pusher) {
-        setupPusher(appointment.pusher);
+      // Reconectar ao Pusher se tiver config
+      if (statusData?.pusher) {
+        setupPusher(statusData.pusher);
       }
 
       Toast.show({
         type: "info",
-        text1: appointment.is_resuming ? "Atendimento retomado" : "Consulta criada",
+        text1: "Atendimento retomado",
         text2: "Aguardando médico disponível...",
       });
 
@@ -203,9 +194,10 @@ export default function ConsultaImediataScreen() {
   const createAppointment = async () => {
     try {
       setStatus("creating");
-      const userIdStr = await SecureStore.getItemAsync("user-id");
+      // Usa pacienteId (pode ser dependente) ou fallback para user-id
+      const pacienteId = params.pacienteId || (await SecureStore.getItemAsync("user-id"));
 
-      if (!userIdStr) {
+      if (!pacienteId) {
         Toast.show({
           type: "error",
           text1: "Erro ao carregar dados do usuário",
@@ -214,14 +206,18 @@ export default function ConsultaImediataScreen() {
         return;
       }
 
-      const userId = parseInt(userIdStr);
+      const userId = parseInt(pacienteId);
 
-      console.log("[CONSULTA_IMEDIATA] Criando consulta para usuario:", userId);
+      console.log("[CONSULTA_IMEDIATA] Criando consulta para:", userId, params.pacienteNome || "titular");
+
+      // Validar (gerar token Teladoc) para o paciente selecionado
+      await telemedicinaService.validate(userId);
 
       // Cria consulta imediata
       const appointment = await telemedicinaService.createImmediateAppointment(userId);
 
       setAppointmentId(appointment.appointment_id);
+      if (appointment.case_attendance_id) setCaseAttendanceId(String(appointment.case_attendance_id));
       setStatus("waiting");
 
       console.log("[CONSULTA_IMEDIATA] Consulta criada:", appointment);
@@ -261,16 +257,21 @@ export default function ConsultaImediataScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              if (appointmentId) {
+              const userIdStr = await SecureStore.getItemAsync("user-id");
+              if (userIdStr) {
+                const userId = parseInt(userIdStr);
+                // Usa o case_attendance_id real da Teladoc se disponível
+                const cancelId = caseAttendanceId || String(appointmentId || "0");
                 await telemedicinaService.cancelAppointment(
-                  appointmentId,
+                  userId,
+                  cancelId,
                   "Cancelado pelo paciente"
                 );
-                Toast.show({
-                  type: "success",
-                  text1: "Consulta cancelada",
-                });
               }
+              Toast.show({
+                type: "success",
+                text1: "Consulta cancelada",
+              });
               router.back();
             } catch (error) {
               console.error("[CONSULTA_IMEDIATA] Erro ao cancelar:", error);
@@ -278,6 +279,7 @@ export default function ConsultaImediataScreen() {
                 type: "error",
                 text1: "Erro ao cancelar consulta",
               });
+              router.back();
             }
           },
         },
@@ -306,6 +308,14 @@ export default function ConsultaImediataScreen() {
       case "waiting":
         return (
           <>
+            {params.pacienteNome && (
+              <View style={styles.pacienteBanner}>
+                <Text style={styles.pacienteBannerIcon}>👤</Text>
+                <Text style={styles.pacienteBannerText}>
+                  Consulta para {params.pacienteNome.split(" ")[0]}
+                </Text>
+              </View>
+            )}
             <View style={styles.waitingAnimation}>
               <Text style={styles.iconLarge}>🩺</Text>
               <ActivityIndicator
@@ -318,8 +328,10 @@ export default function ConsultaImediataScreen() {
               Procurando médico disponível
             </Text>
             <Text style={styles.statusDescription}>
-              Você está na fila de atendimento.{"\n"}
-              Em breve um médico irá atendê-lo.
+              {params.pacienteNome
+                ? `${params.pacienteNome.split(" ")[0]} está na fila de atendimento.`
+                : "Você está na fila de atendimento."}
+              {"\n"}Em breve um médico irá atendê-lo.
             </Text>
 
             {estimatedWait && (
@@ -466,6 +478,24 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.regular,
     color: "#1976D2",
     lineHeight: 20,
+  },
+  pacienteBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E8EEFF",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginBottom: 24,
+    gap: 8,
+  },
+  pacienteBannerIcon: {
+    fontSize: 18,
+  },
+  pacienteBannerText: {
+    fontSize: 14,
+    fontFamily: Fonts.semiBold,
+    color: "#032FEA",
   },
   cancelButton: {
     marginTop: 20,

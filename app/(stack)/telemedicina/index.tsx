@@ -1,13 +1,16 @@
 import telemedicinaService from "@/api/telemedicina";
+import { GetMyData } from "@/api/auth";
 import { Colors } from "@/constants/Colors";
 import { Fonts } from "@/constants/Fonts";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import * as SecureStore from "expo-secure-store";
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   ActivityIndicator,
+  Alert,
+  Modal,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -18,37 +21,48 @@ import {
 } from "react-native";
 import Toast from "react-native-toast-message";
 
+interface Paciente {
+  id: number;
+  nome: string;
+  isTitular: boolean;
+}
+
 export default function TelemedicinaMenuScreen() {
   const router = useRouter();
   const themeColors = Colors["dark"];
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  const [activeAppointment, setActiveAppointment] = useState<any>(null);
+  const [activeAppointments, setActiveAppointments] = useState<any[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
-
   const [initialized, setInitialized] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const initializedRef = useRef(false);
 
-  // Roda na primeira montagem (com loading) e ao voltar para a tela (sem loading)
+  // Pacientes (titular + dependentes)
+  const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [showPacienteModal, setShowPacienteModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"imediata" | "agendar" | null>(null);
+
   useFocusEffect(
     useCallback(() => {
-      if (!initialized) {
+      if (!initializedRef.current) {
         initializeTelemedicina();
       } else {
-        refreshActiveAppointment();
+        refreshActiveAppointments();
       }
-    }, [initialized])
+    }, [])
   );
 
-  const refreshActiveAppointment = async () => {
+  const refreshActiveAppointments = async () => {
     try {
       const storedId = userId || (await SecureStore.getItemAsync("user-id"));
       if (!storedId) return;
-      const active = await telemedicinaService.getActiveAppointment(
+      const list = await telemedicinaService.getActiveAppointments(
         parseInt(storedId.toString())
       );
-      setActiveAppointment(active);
+      setActiveAppointments(list);
     } catch (error) {
-      console.error("[TELEMEDICINA_SCREEN] Erro ao atualizar atendimento ativo:", error);
+      console.error("[TELEMEDICINA_SCREEN] Erro ao atualizar atendimentos:", error);
     }
   };
 
@@ -58,34 +72,47 @@ export default function TelemedicinaMenuScreen() {
       setHasError(false);
 
       const userIdFromStore = await SecureStore.getItemAsync("user-id");
+      const userToken = await SecureStore.getItemAsync("user-token");
 
       if (!userIdFromStore) {
-        Toast.show({
-          type: "error",
-          text1: "Erro ao carregar dados do usuário",
-        });
+        Toast.show({ type: "error", text1: "Erro ao carregar dados do usuário" });
         router.back();
         return;
       }
 
       setUserId(userIdFromStore);
-
-      console.log(
-        "[TELEMEDICINA_SCREEN] Inicializando para usuario:",
-        userIdFromStore
-      );
-
       await telemedicinaService.validate(parseInt(userIdFromStore));
-      console.log("[TELEMEDICINA_SCREEN] Acesso validado!");
 
-      // Verifica atendimento ativo para retomada
-      const active = await telemedicinaService.getActiveAppointment(
+      // Buscar dados do usuário e dependentes
+      if (userToken) {
+        try {
+          const userData = await GetMyData(parseInt(userIdFromStore), userToken);
+          if (userData) {
+            const listaPacientes: Paciente[] = [
+              { id: parseInt(userIdFromStore), nome: userData.name || "Titular", isTitular: true },
+            ];
+            if (userData.dependentes && userData.dependentes.length > 0) {
+              userData.dependentes.forEach((dep: any) => {
+                listaPacientes.push({
+                  id: dep.id,
+                  nome: dep.nome,
+                  isTitular: false,
+                });
+              });
+            }
+            setPacientes(listaPacientes);
+          }
+        } catch (e) {
+          console.warn("[TELEMEDICINA_SCREEN] Erro ao buscar dependentes:", e);
+          // Fallback: só o titular
+          setPacientes([{ id: parseInt(userIdFromStore), nome: "Titular", isTitular: true }]);
+        }
+      }
+
+      const list = await telemedicinaService.getActiveAppointments(
         parseInt(userIdFromStore)
       );
-      if (active) {
-        console.log("[TELEMEDICINA_SCREEN] Atendimento ativo encontrado:", active.id);
-      }
-      setActiveAppointment(active);
+      setActiveAppointments(list);
     } catch (error: any) {
       console.error("[TELEMEDICINA_SCREEN] Erro ao inicializar:", error);
 
@@ -108,7 +135,24 @@ export default function TelemedicinaMenuScreen() {
     } finally {
       setLoading(false);
       setInitialized(true);
+      initializedRef.current = true;
     }
+  };
+
+  const handleSelectPaciente = (paciente: Paciente) => {
+    setShowPacienteModal(false);
+    if (pendingAction === "imediata") {
+      router.push({
+        pathname: "/(stack)/telemedicina/consulta-imediata" as any,
+        params: { pacienteId: paciente.id.toString(), pacienteNome: paciente.nome },
+      });
+    } else if (pendingAction === "agendar") {
+      router.push({
+        pathname: "/(stack)/telemedicina/agendar-consulta" as any,
+        params: { pacienteId: paciente.id.toString(), pacienteNome: paciente.nome },
+      });
+    }
+    setPendingAction(null);
   };
 
   const handleConsultarAgora = () => {
@@ -120,7 +164,17 @@ export default function TelemedicinaMenuScreen() {
       });
       return;
     }
-    router.push("/(stack)/telemedicina/consulta-imediata" as any);
+    // Se tem dependentes, perguntar para quem
+    if (pacientes.length > 1) {
+      setPendingAction("imediata");
+      setShowPacienteModal(true);
+    } else {
+      const p = pacientes[0];
+      router.push({
+        pathname: "/(stack)/telemedicina/consulta-imediata" as any,
+        params: p ? { pacienteId: p.id.toString(), pacienteNome: p.nome } : undefined,
+      });
+    }
   };
 
   const handleAgendarConsulta = () => {
@@ -132,34 +186,146 @@ export default function TelemedicinaMenuScreen() {
       });
       return;
     }
-    router.push("/(stack)/telemedicina/agendar-consulta" as any);
-  };
-
-  const handleResumeAppointment = () => {
-    if (!activeAppointment) return;
-
-    if (activeAppointment.appointment_type === "immediate") {
-      router.push({
-        pathname: "/(stack)/telemedicina/consulta-imediata" as any,
-        params: { appointmentId: activeAppointment.id.toString() },
-      });
+    if (pacientes.length > 1) {
+      setPendingAction("agendar");
+      setShowPacienteModal(true);
     } else {
-      // Para agendadas, mostra status
+      const p = pacientes[0];
       router.push({
-        pathname: "/(stack)/telemedicina/consulta-imediata" as any,
-        params: { appointmentId: activeAppointment.id.toString() },
+        pathname: "/(stack)/telemedicina/agendar-consulta" as any,
+        params: p ? { pacienteId: p.id.toString(), pacienteNome: p.nome } : undefined,
       });
     }
   };
 
+  const handleResumeAppointment = (appointment: any) => {
+    router.push({
+      pathname: "/(stack)/telemedicina/consulta-imediata" as any,
+      params: {
+        appointmentId: appointment.id.toString(),
+        pacienteId: appointment.assinante_id?.toString(),
+        pacienteNome: appointment.paciente_nome || "",
+      },
+    });
+  };
+
+  const handleCancelAppointment = (appointment: any) => {
+    const isImmediate = appointment.appointment_type === "immediate";
+    Alert.alert(
+      "Cancelar Consulta",
+      isImmediate
+        ? "Deseja realmente cancelar esta consulta imediata?"
+        : "Deseja realmente cancelar esta consulta agendada?",
+      [
+        { text: "Não", style: "cancel" },
+        {
+          text: "Sim, cancelar",
+          style: "destructive",
+          onPress: async () => {
+            setCancelling(true);
+            try {
+              // Validar (gerar token Teladoc) para o paciente do appointment
+              const uid = appointment.assinante_id;
+              await telemedicinaService.validate(uid);
+
+              const cancelId = appointment.case_attendance_id || String(appointment.id);
+              await telemedicinaService.cancelAppointment(
+                uid,
+                cancelId,
+                "Cancelado pelo paciente"
+              );
+
+              Toast.show({ type: "success", text1: "Consulta cancelada com sucesso" });
+              setActiveAppointments((prev) =>
+                prev.filter((a) => a.id !== appointment.id)
+              );
+            } catch (error) {
+              console.error("[TELEMEDICINA_SCREEN] Erro ao cancelar:", error);
+              Toast.show({ type: "error", text1: "Erro ao cancelar consulta" });
+            } finally {
+              setCancelling(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const formatScheduledDate = (dateStr: string, timeStr: string) => {
+    if (!dateStr) return "";
+    try {
+      const dateOnly = String(dateStr).substring(0, 10);
+      const [year, month, day] = dateOnly.split("-");
+      const time = timeStr ? String(timeStr).substring(0, 5) : "";
+      const months = ["", "jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+      const monthName = months[parseInt(month)] || month;
+      return `${parseInt(day)} ${monthName} ${year}${time ? ` - ${time}` : ""}`;
+    } catch {
+      return String(dateStr);
+    }
+  };
+
+  const getTimeUntil = (dateStr: string, timeStr: string) => {
+    if (!dateStr) return null;
+    try {
+      const dateOnly = String(dateStr).substring(0, 10);
+      const scheduled = new Date(`${dateOnly}T${timeStr || "00:00:00"}`);
+      const now = new Date();
+      const diffMs = scheduled.getTime() - now.getTime();
+      const diffMin = Math.floor(diffMs / (1000 * 60));
+      const diffHours = Math.floor(diffMin / 60);
+      const diffDays = Math.floor(diffHours / 24);
+
+      if (diffMin < -60) return null;
+      if (diffMin <= 0) return "Agora";
+      if (diffMin <= 5) return "Em 5 min";
+      if (diffMin <= 15) return "Em breve";
+      if (diffMin <= 30) return "Em 30 min";
+      if (diffMin <= 60) return `Em ${diffMin} min`;
+      if (diffHours < 24) return `Em ${diffHours}h`;
+      if (diffDays === 1) return "Amanhã";
+      return `Em ${diffDays} dias`;
+    } catch {
+      return null;
+    }
+  };
+
+  const isScheduledSoon = (dateStr: string, timeStr: string) => {
+    if (!dateStr) return false;
+    try {
+      const dateOnly = String(dateStr).substring(0, 10);
+      const scheduled = new Date(`${dateOnly}T${timeStr || "00:00:00"}`);
+      const now = new Date();
+      const diffMin = (scheduled.getTime() - now.getTime()) / (1000 * 60);
+      return diffMin <= 15 && diffMin >= -60;
+    } catch {
+      return false;
+    }
+  };
+
+  const getFirstName = (nome: string) => {
+    if (!nome) return "";
+    return nome.split(" ")[0];
+  };
+
+  // Verifica se o appointment pertence a um dependente (não é o titular logado)
+  const isDependenteAppointment = (appointment: any) => {
+    if (!userId) return false;
+    return String(appointment.assinante_id) !== String(userId);
+  };
+
+  // Separa imediatas de agendadas
+  const immediateAppointments = activeAppointments.filter(
+    (a) => a.appointment_type === "immediate"
+  );
+  const scheduledAppointments = activeAppointments.filter(
+    (a) => a.appointment_type === "scheduled"
+  );
+
   if (loading) {
     return (
       <View
-        style={[
-          styles.container,
-          styles.centered,
-          { backgroundColor: themeColors.background },
-        ]}
+        style={[styles.container, styles.centered, { backgroundColor: themeColors.background }]}
       >
         <ActivityIndicator size="large" color={themeColors.tint} />
         <Text style={[styles.loadingText, { color: themeColors.text }]}>
@@ -197,30 +363,29 @@ export default function TelemedicinaMenuScreen() {
           </Text>
         </View>
 
-        {/* Banner de atendimento ativo */}
-        {activeAppointment && (
+        {/* Banners de consultas imediatas em andamento */}
+        {immediateAppointments.map((apt) => (
           <TouchableOpacity
+            key={apt.id}
             style={styles.resumeBanner}
-            onPress={handleResumeAppointment}
+            onPress={() => handleResumeAppointment(apt)}
             activeOpacity={0.8}
           >
             <View style={styles.resumeIconContainer}>
               <Ionicons name="videocam" size={24} color="#fff" />
             </View>
             <View style={styles.resumeTextContainer}>
-              <Text style={styles.resumeTitle}>
-                Você tem um atendimento em andamento
-              </Text>
+              <Text style={styles.resumeTitle}>Atendimento em andamento</Text>
               <Text style={styles.resumeSubtitle}>
-                {activeAppointment.appointment_type === "immediate"
-                  ? "Consulta imediata"
-                  : activeAppointment.speciality_name || "Consulta agendada"}
-                {" - "}
-                {activeAppointment.status === "waiting"
+                {apt.paciente_nome && isDependenteAppointment(apt)
+                  ? `Para ${getFirstName(apt.paciente_nome)} - `
+                  : ""}
+                Consulta imediata{" - "}
+                {apt.status === "waiting"
                   ? "Aguardando médico"
-                  : activeAppointment.status === "assigned"
+                  : apt.status === "assigned"
                   ? "Médico encontrado"
-                  : "Agendada"}
+                  : "Em atendimento"}
               </Text>
             </View>
             <View style={styles.resumeArrow}>
@@ -228,19 +393,108 @@ export default function TelemedicinaMenuScreen() {
               <Ionicons name="arrow-forward" size={16} color="#fff" />
             </View>
           </TouchableOpacity>
+        ))}
+
+        {/* Cards de consultas agendadas */}
+        {scheduledAppointments.length > 0 && (
+          <View style={styles.scheduledSection}>
+            <Text style={[styles.scheduledSectionTitle, { color: themeColors.text }]}>
+              Suas Consultas
+            </Text>
+            {scheduledAppointments.map((apt) => {
+              const soon = isScheduledSoon(apt.scheduled_date, apt.scheduled_time);
+              const timeUntil = getTimeUntil(apt.scheduled_date, apt.scheduled_time);
+              const isDep = isDependenteAppointment(apt);
+              return (
+                <View key={apt.id} style={styles.scheduledCard}>
+                  {/* Barra lateral colorida */}
+                  <View style={[styles.scheduledAccent, soon && styles.scheduledAccentSoon]} />
+
+                  <View style={styles.scheduledContent}>
+                    {/* Paciente badge (se for dependente) */}
+                    {isDep && apt.paciente_nome && (
+                      <View style={styles.pacienteBadgeRow}>
+                        <View style={styles.pacienteBadge}>
+                          <Ionicons name="person" size={12} color="#fff" />
+                          <Text style={styles.pacienteBadgeText}>
+                            {getFirstName(apt.paciente_nome)}
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+
+                    {/* Header com data e badge */}
+                    <View style={styles.scheduledCardHeader}>
+                      <View style={styles.scheduledDateBox}>
+                        <Ionicons
+                          name="calendar-outline"
+                          size={16}
+                          color={soon ? "#00C853" : "#666"}
+                        />
+                        <Text style={[styles.scheduledDateText, soon && styles.scheduledDateSoon]}>
+                          {formatScheduledDate(apt.scheduled_date, apt.scheduled_time)}
+                        </Text>
+                      </View>
+                      {timeUntil && (
+                        <View style={[styles.timeBadge, soon && styles.timeBadgeSoon]}>
+                          <Text style={[styles.timeBadgeText, soon && styles.timeBadgeTextSoon]}>
+                            {timeUntil}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+
+                    {/* Especialidade */}
+                    <Text style={styles.scheduledCardSpecialty}>
+                      {apt.speciality_name || "Teleconsulta"}
+                    </Text>
+
+                    {/* Profissional */}
+                    {apt.professional_name && (
+                      <View style={styles.scheduledDoctorRow}>
+                        <Ionicons name="person-circle-outline" size={18} color="#999" />
+                        <Text style={styles.scheduledDoctorText} numberOfLines={1}>
+                          {apt.professional_name}
+                        </Text>
+                      </View>
+                    )}
+
+                    {/* Ações */}
+                    <View style={styles.scheduledCardActions}>
+                      {soon && (
+                        <TouchableOpacity
+                          style={styles.enterButton}
+                          onPress={() => handleResumeAppointment(apt)}
+                          activeOpacity={0.8}
+                        >
+                          <Ionicons name="videocam" size={16} color="#fff" />
+                          <Text style={styles.enterButtonText}>Entrar na consulta</Text>
+                        </TouchableOpacity>
+                      )}
+                      <TouchableOpacity
+                        style={styles.cancelTextButton}
+                        onPress={() => handleCancelAppointment(apt)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.cancelTextButtonLabel}>Cancelar</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
         )}
 
         <View style={styles.cardsContainer}>
-          {/* Card 1: Consultar Agora (verde) */}
+          {/* Card: Consultar Agora */}
           <TouchableOpacity
             style={[styles.card, styles.immediateCard]}
             onPress={handleConsultarAgora}
             activeOpacity={0.8}
           >
             <View style={styles.cardHeader}>
-              <View
-                style={[styles.iconContainer, { backgroundColor: "#ffffff" }]}
-              >
+              <View style={[styles.iconContainer, { backgroundColor: "#ffffff" }]}>
                 <Ionicons name="videocam-outline" size={28} color="#00C853" />
               </View>
               <View style={[styles.cardBadge, { backgroundColor: "#00A843" }]}>
@@ -253,16 +507,14 @@ export default function TelemedicinaMenuScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Card 2: Agendar Consulta (azul) */}
+          {/* Card: Agendar Consulta */}
           <TouchableOpacity
             style={[styles.card, styles.scheduleCard]}
             onPress={handleAgendarConsulta}
             activeOpacity={0.8}
           >
             <View style={styles.cardHeader}>
-              <View
-                style={[styles.iconContainer, { backgroundColor: "#ffffff" }]}
-              >
+              <View style={[styles.iconContainer, { backgroundColor: "#ffffff" }]}>
                 <Ionicons name="calendar-outline" size={28} color="#032FEA" />
               </View>
               <View style={[styles.cardBadge, { backgroundColor: "#0225BB" }]}>
@@ -298,6 +550,66 @@ export default function TelemedicinaMenuScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Modal: Para quem é a consulta? */}
+      <Modal transparent visible={showPacienteModal} animationType="slide">
+        <View style={styles.pacienteModalOverlay}>
+          <View style={styles.pacienteModalContainer}>
+            <View style={styles.pacienteModalHandle} />
+            <Text style={styles.pacienteModalTitle}>Para quem é a consulta?</Text>
+            <Text style={styles.pacienteModalSubtitle}>
+              Selecione o paciente que será atendido
+            </Text>
+
+            <View style={styles.pacienteList}>
+              {pacientes.map((p) => (
+                <TouchableOpacity
+                  key={p.id}
+                  style={styles.pacienteItem}
+                  onPress={() => handleSelectPaciente(p)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.pacienteAvatar, p.isTitular && styles.pacienteAvatarTitular]}>
+                    <Ionicons
+                      name={p.isTitular ? "person" : "people"}
+                      size={22}
+                      color={p.isTitular ? "#032FEA" : "#666"}
+                    />
+                  </View>
+                  <View style={styles.pacienteInfo}>
+                    <Text style={styles.pacienteNome}>{p.nome}</Text>
+                    <Text style={styles.pacienteTipo}>
+                      {p.isTitular ? "Titular" : "Dependente"}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color="#ccc" />
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={styles.pacienteModalCancel}
+              onPress={() => {
+                setShowPacienteModal(false);
+                setPendingAction(null);
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.pacienteModalCancelText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Loading overlay ao cancelar */}
+      <Modal transparent visible={cancelling} animationType="fade">
+        <View style={styles.cancelOverlay}>
+          <View style={styles.cancelOverlayBox}>
+            <ActivityIndicator size="large" color="#e74c3c" />
+            <Text style={styles.cancelOverlayText}>Cancelando consulta...</Text>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -348,13 +660,13 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.regular,
   },
 
-  // Resume banner
+  // Immediate resume banner (orange)
   resumeBanner: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#F57C00",
     marginHorizontal: 20,
-    marginBottom: 20,
+    marginBottom: 12,
     borderRadius: 14,
     padding: 14,
     shadowColor: "#F57C00",
@@ -401,7 +713,147 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
 
-  // Cards
+  // Scheduled appointments section
+  scheduledSection: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  scheduledSectionTitle: {
+    fontSize: 17,
+    fontFamily: Fonts.bold,
+    marginBottom: 12,
+  },
+
+  // Scheduled card (white with accent bar)
+  scheduledCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    flexDirection: "row",
+    marginBottom: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
+    overflow: "hidden",
+  },
+  scheduledAccent: {
+    width: 4,
+    backgroundColor: "#032FEA",
+  },
+  scheduledAccentSoon: {
+    backgroundColor: "#00C853",
+  },
+  scheduledContent: {
+    flex: 1,
+    padding: 14,
+  },
+  scheduledCardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  scheduledDateBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  scheduledDateText: {
+    fontSize: 13,
+    fontFamily: Fonts.semiBold,
+    color: "#666",
+  },
+  scheduledDateSoon: {
+    color: "#00C853",
+  },
+  timeBadge: {
+    backgroundColor: "#F0F0F0",
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  timeBadgeSoon: {
+    backgroundColor: "#E8F5E9",
+  },
+  timeBadgeText: {
+    fontSize: 11,
+    fontFamily: Fonts.bold,
+    color: "#666",
+  },
+  timeBadgeTextSoon: {
+    color: "#00C853",
+  },
+
+  // Paciente badge no card agendado
+  pacienteBadgeRow: {
+    flexDirection: "row",
+    marginBottom: 8,
+  },
+  pacienteBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#032FEA",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    gap: 4,
+  },
+  pacienteBadgeText: {
+    fontSize: 11,
+    fontFamily: Fonts.bold,
+    color: "#fff",
+  },
+
+  scheduledCardSpecialty: {
+    fontSize: 16,
+    fontFamily: Fonts.bold,
+    color: "#1A1A2E",
+    marginBottom: 4,
+  },
+  scheduledDoctorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 10,
+  },
+  scheduledDoctorText: {
+    fontSize: 13,
+    fontFamily: Fonts.regular,
+    color: "#888",
+    flex: 1,
+  },
+  scheduledCardActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 4,
+  },
+  enterButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#00C853",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    gap: 6,
+  },
+  enterButtonText: {
+    fontSize: 13,
+    fontFamily: Fonts.bold,
+    color: "#fff",
+  },
+  cancelTextButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  cancelTextButtonLabel: {
+    fontSize: 13,
+    fontFamily: Fonts.regular,
+    color: "#e74c3c",
+  },
+
+  // Action cards
   cardsContainer: {
     gap: 16,
     marginBottom: 30,
@@ -505,6 +957,115 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: Fonts.regular,
     lineHeight: 20,
+    color: "#333",
+  },
+
+  // Paciente selection modal
+  pacienteModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  pacienteModalContainer: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+    paddingTop: 12,
+    maxHeight: "70%",
+  },
+  pacienteModalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: "#DDD",
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: 20,
+  },
+  pacienteModalTitle: {
+    fontSize: 20,
+    fontFamily: Fonts.bold,
+    color: "#1A1A2E",
+    marginBottom: 4,
+  },
+  pacienteModalSubtitle: {
+    fontSize: 14,
+    fontFamily: Fonts.regular,
+    color: "#888",
+    marginBottom: 24,
+  },
+  pacienteList: {
+    gap: 8,
+  },
+  pacienteItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8F9FA",
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#EAEAEA",
+  },
+  pacienteAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#F0F0F0",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+  pacienteAvatarTitular: {
+    backgroundColor: "#E8EEFF",
+  },
+  pacienteInfo: {
+    flex: 1,
+  },
+  pacienteNome: {
+    fontSize: 16,
+    fontFamily: Fonts.semiBold,
+    color: "#1A1A2E",
+    marginBottom: 2,
+  },
+  pacienteTipo: {
+    fontSize: 13,
+    fontFamily: Fonts.regular,
+    color: "#888",
+  },
+  pacienteModalCancel: {
+    marginTop: 20,
+    alignItems: "center",
+    paddingVertical: 14,
+  },
+  pacienteModalCancelText: {
+    fontSize: 16,
+    fontFamily: Fonts.semiBold,
+    color: "#e74c3c",
+  },
+
+  // Cancel loading overlay
+  cancelOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cancelOverlayBox: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 30,
+    alignItems: "center",
+    gap: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  cancelOverlayText: {
+    fontSize: 16,
+    fontFamily: Fonts.semiBold,
     color: "#333",
   },
 });

@@ -1,9 +1,9 @@
 import telemedicinaService from "@/api/telemedicina";
-import type { Specialty, Slot, SlotsResponse } from "@/api/telemedicina";
+import type { Specialty, Slot, SlotsResponse, Professional } from "@/api/telemedicina";
 import { Colors } from "@/constants/Colors";
 import { Fonts } from "@/constants/Fonts";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import {
@@ -34,6 +34,7 @@ const DAY_NAMES = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
 
 export default function AgendarConsultaScreen() {
   const router = useRouter();
+  const routeParams = useLocalSearchParams<{ pacienteId?: string; pacienteNome?: string }>();
   const themeColors = Colors["dark"];
 
   // Wizard state
@@ -50,6 +51,7 @@ export default function AgendarConsultaScreen() {
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>("byTime");
 
   // Step 2 & 3: Date & Time
+  const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [slotsData, setSlotsData] = useState<SlotsResponse>({ slots: [], dates_available: [] });
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
@@ -67,10 +69,18 @@ export default function AgendarConsultaScreen() {
   }, []);
 
   const loadUser = async () => {
-    const id = await SecureStore.getItemAsync("user-id");
+    // Usa pacienteId (pode ser dependente) ou fallback para user-id
+    const id = routeParams.pacienteId || (await SecureStore.getItemAsync("user-id"));
     if (id) {
-      setUserId(parseInt(id));
-      loadSpecialties(parseInt(id));
+      const parsedId = parseInt(id);
+      setUserId(parsedId);
+      // Validar (gerar token Teladoc) para o paciente selecionado
+      try {
+        await telemedicinaService.validate(parsedId);
+      } catch (e) {
+        console.warn("[AGENDAR] Erro ao validar paciente, continuando...", e);
+      }
+      loadSpecialties(parsedId);
     }
   };
 
@@ -92,12 +102,30 @@ export default function AgendarConsultaScreen() {
     setSelectedSpecialty(specialty);
     setScheduleMode("byTime");
     setSelectedProfessionalName(null);
+    setProfessionals([]);
     if (!userId) return;
 
     try {
       setLoading(true);
       const today = new Date().toISOString().split("T")[0];
-      const data = await telemedicinaService.getScheduleSlots(
+
+      // 1. Busca profissionais disponiveis (specialistSchedules)
+      const specialistData = await telemedicinaService.getScheduleSlots(
+        userId,
+        specialty.speciality_id ?? undefined,
+        specialty.occupation_id ?? undefined,
+        today,
+        30,
+        specialty.program_id,
+        'specialistSchedules'
+      );
+
+      if (specialistData.professionals) {
+        setProfessionals(specialistData.professionals);
+      }
+
+      // 2. Busca dias disponiveis no calendario (daysProgramCalendar)
+      const calendarData = await telemedicinaService.getScheduleSlots(
         userId,
         specialty.speciality_id ?? undefined,
         specialty.occupation_id ?? undefined,
@@ -106,7 +134,11 @@ export default function AgendarConsultaScreen() {
         specialty.program_id,
         'daysProgramCalendar'
       );
-      setSlotsData(data);
+
+      setSlotsData({
+        dates_available: calendarData.dates_available,
+        slots: [],
+      });
       setCurrentStep("date");
     } catch (error) {
       console.error("Erro ao carregar slots:", error);
@@ -116,48 +148,28 @@ export default function AgendarConsultaScreen() {
     }
   };
 
-  const handleSwitchMode = async (mode: ScheduleMode) => {
-    if (mode === scheduleMode || !userId || !selectedSpecialty) return;
-
+  const handleSwitchMode = (mode: ScheduleMode) => {
+    if (mode === scheduleMode) return;
     setScheduleMode(mode);
     setSelectedDate(null);
     setSelectedTime(null);
     setSelectedSlot(null);
     setSelectedProfessionalName(null);
-
-    try {
-      setLoading(true);
-      const today = new Date().toISOString().split("T")[0];
-      const rule = mode === "byTime" ? "daysProgramCalendar" : "specialistSchedules";
-      const data = await telemedicinaService.getScheduleSlots(
-        userId,
-        selectedSpecialty.speciality_id ?? undefined,
-        selectedSpecialty.occupation_id ?? undefined,
-        today,
-        30,
-        selectedSpecialty.program_id,
-        rule
-      );
-      setSlotsData(data);
-    } catch (error) {
-      console.error("Erro ao carregar slots:", error);
-      Toast.show({ type: "error", text1: "Erro ao buscar horários disponíveis" });
-    } finally {
-      setLoading(false);
-    }
   };
 
   // List of unique professionals for "by professional" mode
   const uniqueProfessionals = useMemo(() => {
-    const map = new Map<string, Slot>();
-    for (const slot of slotsData.slots) {
-      const key = slot.professional_name || "unknown";
-      if (!map.has(key)) {
-        map.set(key, slot);
-      }
-    }
-    return Array.from(map.values());
-  }, [slotsData.slots]);
+    return professionals.map(prof => ({
+      date: '',
+      time: '',
+      timestamp: 0,
+      user_schedule_id: prof.schedule_id,
+      user_id: prof.user_id,
+      professional_name: prof.professional_name,
+      professional_crm: prof.professional_crm,
+      double_booking: false,
+    } as Slot));
+  }, [professionals]);
 
   // Slots filtered by selected professional
   const slotsForProfessional = useMemo(() => {
@@ -232,10 +244,54 @@ export default function AgendarConsultaScreen() {
     }
   };
 
-  const handleSelectDate = (dateStr: string) => {
+  const handleSelectDate = async (dateStr: string) => {
     setSelectedDate(dateStr);
     setSelectedTime(null);
     setSelectedSlot(null);
+
+    if (userId && selectedSpecialty && professionals.length > 0) {
+      try {
+        setLoading(true);
+
+        // Busca slots reais para cada profissional disponivel
+        const allSlots: Slot[] = [];
+        const schedulesToFetch = scheduleMode === "byProfessional" && selectedProfessionalName
+          ? professionals.filter(p => p.professional_name === selectedProfessionalName)
+          : professionals;
+
+        for (const prof of schedulesToFetch) {
+          const realSlots = await telemedicinaService.getSlotsByDate(
+            userId,
+            dateStr,
+            selectedSpecialty.program_id,
+            selectedSpecialty.speciality_id ?? undefined,
+            selectedSpecialty.occupation_id ?? undefined,
+            prof.schedule_id
+          );
+          // Enrich slots with professional info
+          const enrichedSlots = realSlots.slots.map(slot => ({
+            ...slot,
+            professional_name: slot.professional_name || prof.professional_name,
+            professional_crm: slot.professional_crm || prof.professional_crm,
+            user_id: slot.user_id || prof.user_id,
+          }));
+          allSlots.push(...enrichedSlots);
+        }
+
+        setSlotsData((prev) => {
+          const otherDateSlots = prev.slots.filter((s) => s.date !== dateStr);
+          return {
+            dates_available: prev.dates_available,
+            slots: [...otherDateSlots, ...allSlots],
+          };
+        });
+      } catch (error) {
+        console.error("Erro ao carregar horários do dia:", error);
+        Toast.show({ type: "error", text1: "Erro ao buscar horários do dia" });
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   // ---- STEP 3: Time ----
@@ -259,9 +315,17 @@ export default function AgendarConsultaScreen() {
   // ---- STEP 4: Professional ----
   const professionalsForSlot = useMemo(() => {
     if (!selectedDate || !selectedTime) return [];
-    return slotsData.slots.filter(
+    const filtered = slotsData.slots.filter(
       (s) => s.date === selectedDate && s.time === selectedTime
     );
+    // Deduplica por professional_name (scheduleUserCalendar pode retornar arrays duplicados)
+    const seen = new Set<string>();
+    return filtered.filter((s) => {
+      const key = s.professional_name || String(s.user_schedule_id);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }, [selectedDate, selectedTime, slotsData.slots]);
 
   const handleSelectProfessional = (slot: Slot) => {
@@ -279,6 +343,7 @@ export default function AgendarConsultaScreen() {
         time: selectedTime,
         timestamp: selectedSlot.timestamp,
         userScheduleId: selectedSlot.user_schedule_id,
+        userId: selectedSlot.user_id,
         specialityId: selectedSpecialty.speciality_id ?? undefined,
         specialityName: selectedSpecialty.speciality_name,
         occupationId: selectedSpecialty.occupation_id ?? undefined,
@@ -296,10 +361,57 @@ export default function AgendarConsultaScreen() {
       router.back();
     } catch (error: any) {
       console.error("Erro ao confirmar agendamento:", error);
-      Alert.alert(
-        "Erro ao agendar",
-        error.response?.data?.error || "Não foi possível confirmar o agendamento. Tente novamente."
-      );
+      const errorCode = error.response?.data?.code;
+      const errorMsg = error.response?.data?.error || "";
+
+      if (errorCode === "MAX_ATTENDANCES" || errorMsg.includes("limite")) {
+        // Busca atendimento ativo na Teladoc para oferecer cancelamento
+        Alert.alert(
+          "Consulta ativa encontrada",
+          "Você já possui uma consulta agendada neste programa. Deseja cancelar a consulta anterior para agendar uma nova?",
+          [
+            { text: "Não", style: "cancel" },
+            {
+              text: "Sim, cancelar anterior",
+              style: "destructive",
+              onPress: async () => {
+                try {
+                  setLoading(true);
+                  const activeList = await telemedicinaService.getTeladocActiveAttendances(userId!);
+                  if (activeList.length > 0) {
+                    const active = activeList[0];
+                    await telemedicinaService.cancelAppointment(
+                      userId!,
+                      active.case_attendance_id
+                    );
+                    Toast.show({
+                      type: "success",
+                      text1: "Consulta anterior cancelada",
+                      text2: "Tente agendar novamente.",
+                    });
+                  } else {
+                    Toast.show({
+                      type: "info",
+                      text1: "Nenhuma consulta ativa encontrada na Teladoc",
+                      text2: "Tente agendar novamente em alguns instantes.",
+                    });
+                  }
+                } catch (cancelError) {
+                  console.error("Erro ao cancelar consulta anterior:", cancelError);
+                  Toast.show({ type: "error", text1: "Erro ao cancelar consulta anterior" });
+                } finally {
+                  setLoading(false);
+                }
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          "Erro ao agendar",
+          errorMsg || "Não foi possível confirmar o agendamento. Tente novamente."
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -361,6 +473,16 @@ export default function AgendarConsultaScreen() {
         </Text>
         <View style={{ width: 28 }} />
       </View>
+
+      {/* Banner do paciente */}
+      {routeParams.pacienteNome && (
+        <View style={styles.pacienteBanner}>
+          <Ionicons name="person" size={16} color="#032FEA" />
+          <Text style={styles.pacienteBannerText}>
+            Agendando para {routeParams.pacienteNome.split(" ")[0]}
+          </Text>
+        </View>
+      )}
 
       {currentStep === "specialty" && renderStepSpecialty()}
       {currentStep === "date" && renderStepDate()}
@@ -823,6 +945,22 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "center",
     alignItems: "center",
+  },
+  pacienteBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E8EEFF",
+    marginHorizontal: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    gap: 8,
+    marginBottom: 4,
+  },
+  pacienteBannerText: {
+    fontSize: 13,
+    fontFamily: Fonts.semiBold,
+    color: "#032FEA",
   },
   topBar: {
     flexDirection: "row",

@@ -21,15 +21,27 @@ export interface Slot {
   time: string;
   timestamp: number;
   user_schedule_id: number;
+  user_id?: number;
   professional_name: string;
   professional_crm?: string;
   speciality_id?: number;
   double_booking: boolean;
 }
 
+export interface Professional {
+  schedule_id: number;
+  user_id: number;
+  professional_name: string;
+  professional_crm: string;
+  slot_time_start: string;
+  slot_time_end: string;
+  time_interval: number;
+}
+
 export interface SlotsResponse {
   slots: Slot[];
   dates_available: string[];
+  professionals?: Professional[];
 }
 
 /**
@@ -145,30 +157,39 @@ class TelemedicinaService {
   }
 
   /**
-   * Buscar horários disponíveis (legado)
+   * Buscar slots reais por data (GET com timestamps verdadeiros da Teladoc)
    */
-  async getAvailableSlots(
+  async getSlotsByDate(
     assinanteId: number,
-    date: string
-  ): Promise<any[]> {
+    date: string,
+    programId?: number,
+    specialityId?: number,
+    occupationId?: number,
+    userScheduleId?: number
+  ): Promise<SlotsResponse> {
     try {
-      console.log("[TELEMEDICINA] Buscando slots para:", date);
+      console.log("[TELEMEDICINA] Buscando slots reais para:", date, "schedule:", userScheduleId);
+
+      const params: any = {
+        assinante_id: assinanteId,
+        date: date,
+        program_id: programId || 7,
+      };
+      if (specialityId) params.speciality_id = specialityId;
+      if (occupationId) params.occupation_id = occupationId;
+      if (userScheduleId) params.user_schedule_id = userScheduleId;
 
       const response = await api.get("/telemedicina/appointment/slots", {
-        params: {
-          assinante_id: assinanteId,
-          date: date,
-          program_id: 7,
-        },
+        params,
       });
 
       if (response.data.success) {
-        return response.data.data.slots || [];
+        return response.data.data;
       }
 
-      return [];
+      return { slots: [], dates_available: [] };
     } catch (error) {
-      console.error("[TELEMEDICINA] Erro ao buscar slots:", error);
+      console.error("[TELEMEDICINA] Erro ao buscar slots por data:", error);
       throw error;
     }
   }
@@ -182,6 +203,7 @@ class TelemedicinaService {
     time: string;
     timestamp?: number;
     userScheduleId?: number;
+    userId?: number;
     specialityId?: number;
     specialityName?: string;
     occupationId?: number;
@@ -199,6 +221,7 @@ class TelemedicinaService {
         time: params.time,
         timestamp: params.timestamp,
         user_schedule_id: params.userScheduleId,
+        user_id: params.userId,
         speciality_id: params.specialityId,
         speciality_name: params.specialityName,
         occupation_id: params.occupationId,
@@ -221,6 +244,26 @@ class TelemedicinaService {
   }
 
   /**
+   * Buscar atendimentos ativos na Teladoc (para cancelamento)
+   */
+  async getTeladocActiveAttendances(assinanteId: number): Promise<any[]> {
+    try {
+      const response = await api.get("/telemedicina/appointment/teladoc-active", {
+        params: { assinante_id: assinanteId },
+      });
+
+      if (response.data.success) {
+        return response.data.data || [];
+      }
+
+      return [];
+    } catch (error) {
+      console.error("[TELEMEDICINA] Erro ao buscar atendimentos ativos:", error);
+      return [];
+    }
+  }
+
+  /**
    * Verificar atendimento ativo para retomada
    */
   async getActiveAppointment(assinanteId: number): Promise<any> {
@@ -237,6 +280,26 @@ class TelemedicinaService {
     } catch (error) {
       console.error("[TELEMEDICINA] Erro ao verificar atendimento ativo:", error);
       return null;
+    }
+  }
+
+  /**
+   * Listar todos os atendimentos ativos (imediatos + agendados)
+   */
+  async getActiveAppointments(assinanteId: number): Promise<any[]> {
+    try {
+      const response = await api.get("/telemedicina/appointment/active-list", {
+        params: { assinante_id: assinanteId },
+      });
+
+      if (response.data.success) {
+        return response.data.data || [];
+      }
+
+      return [];
+    } catch (error) {
+      console.error("[TELEMEDICINA] Erro ao listar atendimentos ativos:", error);
+      return [];
     }
   }
 
@@ -307,19 +370,21 @@ class TelemedicinaService {
    * Cancelar consulta
    */
   async cancelAppointment(
-    appointmentId: number,
-    reason: string
+    assinanteId: number,
+    caseAttendanceId: string | number,
+    reason?: string
   ): Promise<boolean> {
     try {
-      console.log("[TELEMEDICINA] Cancelando consulta:", appointmentId);
+      console.log("[TELEMEDICINA] Cancelando agendamento:", caseAttendanceId);
 
-      const response = await api.post(
-        `/telemedicina/appointment/${appointmentId}/cancel`,
-        { reason }
-      );
+      const response = await api.post("/telemedicina/appointment/cancel", {
+        assinante_id: assinanteId,
+        case_attendance_id: caseAttendanceId,
+        reason: reason || "Cancelado pelo usuário",
+      });
 
       if (response.data.success) {
-        console.log("[TELEMEDICINA] Consulta cancelada com sucesso");
+        console.log("[TELEMEDICINA] Agendamento cancelado com sucesso");
         return true;
       }
 
