@@ -2,9 +2,7 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
 // URL da API - ajuste conforme necessário
-const API_URL = __DEV__
-  ? 'https://vpaa97q6g8.execute-api.us-east-1.amazonaws.com/dev' // Desenvolvimento
-  : 'https://d27w10rtb3dij9.cloudfront.net'; // Produção
+const API_URL = 'https://vpaa97q6g8.execute-api.us-east-1.amazonaws.com/dev'; // Temporário: apontando para dev
 
 const api = axios.create({
   baseURL: API_URL,
