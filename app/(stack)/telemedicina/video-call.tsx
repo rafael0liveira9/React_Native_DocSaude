@@ -1,7 +1,7 @@
 import { Colors } from "@/constants/Colors";
 import { Fonts } from "@/constants/Fonts";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -10,9 +10,16 @@ import {
   StatusBar,
   ActivityIndicator,
   Text,
+  TouchableOpacity,
+  Modal,
+  FlatList,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { WebView } from "react-native-webview";
 import Toast from "react-native-toast-message";
+import telemedicinaService from "@/api/telemedicina";
 
 export default function VideoCallScreen() {
   const router = useRouter();
@@ -25,7 +32,52 @@ export default function VideoCallScreen() {
   const appointmentId = parseInt(params.appointmentId as string);
 
   const [loading, setLoading] = useState(true);
+  const [chatVisible, setChatVisible] = useState(false);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatText, setChatText] = useState("");
+  const [sendingChat, setSendingChat] = useState(false);
   const webViewRef = useRef<WebView>(null);
+  const chatPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Polling de mensagens do chat
+  const fetchChatMessages = useCallback(async () => {
+    try {
+      const messages = await telemedicinaService.getChatMessages(appointmentId);
+      setChatMessages(messages);
+    } catch (error) {
+      // silencioso - polling
+    }
+  }, [appointmentId]);
+
+  useEffect(() => {
+    // Inicia polling do chat
+    fetchChatMessages();
+    chatPollRef.current = setInterval(fetchChatMessages, 5000);
+    return () => {
+      if (chatPollRef.current) clearInterval(chatPollRef.current);
+    };
+  }, [fetchChatMessages]);
+
+  const handleSendChat = async () => {
+    if (!chatText.trim()) return;
+    try {
+      setSendingChat(true);
+      await telemedicinaService.sendChatMessage(appointmentId, chatText.trim());
+      setChatText("");
+      await fetchChatMessages();
+    } catch (error) {
+      Toast.show({ type: "error", text1: "Erro ao enviar mensagem" });
+    } finally {
+      setSendingChat(false);
+    }
+  };
+
+  const navigateToRating = () => {
+    router.replace({
+      pathname: "/(stack)/telemedicina/avaliacao" as any,
+      params: { appointmentId: appointmentId.toString() },
+    });
+  };
 
   useEffect(() => {
     console.log("[VIDEO_CALL] Iniciando sessão de vídeo:", {
@@ -335,7 +387,7 @@ export default function VideoCallScreen() {
             type: "info",
             text1: "Chamada encerrada",
           });
-          setTimeout(() => router.back(), 1500);
+          setTimeout(() => navigateToRating(), 1500);
           break;
 
         case "error":
@@ -361,7 +413,7 @@ export default function VideoCallScreen() {
               type: "success",
               text1: "Consulta encerrada",
             });
-            router.back();
+            navigateToRating();
           },
         },
       ]
@@ -388,6 +440,117 @@ export default function VideoCallScreen() {
           Alert.alert("Erro", "Ocorreu um erro ao carregar a videochamada");
         }}
       />
+
+      {/* Botao do chat flutuante */}
+      {!loading && (
+        <TouchableOpacity
+          style={styles.chatFloatingButton}
+          onPress={() => setChatVisible(true)}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.chatFloatingIcon}>💬</Text>
+          {chatMessages.length > 0 && (
+            <View style={styles.chatBadge}>
+              <Text style={styles.chatBadgeText}>{chatMessages.length}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      )}
+
+      {/* Modal de chat */}
+      <Modal
+        visible={chatVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setChatVisible(false)}
+      >
+        <KeyboardAvoidingView
+          style={styles.chatModalContainer}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <TouchableOpacity
+            style={styles.chatModalOverlay}
+            activeOpacity={1}
+            onPress={() => setChatVisible(false)}
+          />
+          <View style={styles.chatPanel}>
+            {/* Header */}
+            <View style={styles.chatHeader}>
+              <Text style={styles.chatHeaderTitle}>Chat</Text>
+              <TouchableOpacity onPress={() => setChatVisible(false)}>
+                <Text style={styles.chatCloseButton}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Messages */}
+            <FlatList
+              data={chatMessages}
+              keyExtractor={(item, index) => String(item.id || index)}
+              inverted
+              contentContainerStyle={styles.chatMessagesList}
+              ListEmptyComponent={
+                <View style={styles.chatEmpty}>
+                  <Text style={styles.chatEmptyText}>
+                    Nenhuma mensagem ainda
+                  </Text>
+                </View>
+              }
+              renderItem={({ item }) => (
+                <View
+                  style={[
+                    styles.chatBubble,
+                    item.sender_type === "patient"
+                      ? styles.chatBubblePatient
+                      : styles.chatBubbleDoctor,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.chatBubbleText,
+                      item.sender_type === "patient"
+                        ? styles.chatBubbleTextPatient
+                        : styles.chatBubbleTextDoctor,
+                    ]}
+                  >
+                    {item.message}
+                  </Text>
+                  <Text style={styles.chatBubbleTime}>
+                    {item.sender_type === "patient" ? "Voce" : "Medico"}
+                  </Text>
+                </View>
+              )}
+            />
+
+            {/* Input */}
+            <View style={styles.chatInputRow}>
+              <TextInput
+                style={styles.chatInput}
+                value={chatText}
+                onChangeText={setChatText}
+                placeholder="Digite sua mensagem..."
+                placeholderTextColor="#888"
+                multiline
+                maxLength={500}
+              />
+              <TouchableOpacity
+                style={[
+                  styles.chatSendButton,
+                  (!chatText.trim() || sendingChat) &&
+                    styles.chatSendButtonDisabled,
+                ]}
+                onPress={handleSendChat}
+                disabled={!chatText.trim() || sendingChat}
+              >
+                {sendingChat ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.chatSendIcon}>➤</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
       {loading && (
         <View style={styles.loadingContainer}>
@@ -423,5 +586,159 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontFamily: Fonts.regular,
+  },
+  // Chat floating button
+  chatFloatingButton: {
+    position: "absolute",
+    bottom: 110,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "rgba(0, 226, 118, 0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 200,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  chatFloatingIcon: {
+    fontSize: 26,
+  },
+  chatBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#e74c3c",
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 4,
+  },
+  chatBadgeText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "bold",
+  },
+  // Chat modal
+  chatModalContainer: {
+    flex: 1,
+  },
+  chatModalOverlay: {
+    flex: 0.35,
+  },
+  chatPanel: {
+    flex: 0.65,
+    backgroundColor: "#1a1a2e",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: "hidden",
+  },
+  chatHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#333",
+  },
+  chatHeaderTitle: {
+    fontSize: 18,
+    fontFamily: Fonts.bold,
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  chatCloseButton: {
+    fontSize: 22,
+    color: "#888",
+    padding: 4,
+  },
+  chatMessagesList: {
+    padding: 16,
+    flexGrow: 1,
+  },
+  chatEmpty: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    transform: [{ scaleY: -1 }],
+  },
+  chatEmptyText: {
+    color: "#666",
+    fontSize: 14,
+    fontFamily: Fonts.regular,
+  },
+  chatBubble: {
+    maxWidth: "80%",
+    padding: 12,
+    borderRadius: 16,
+    marginBottom: 8,
+  },
+  chatBubblePatient: {
+    backgroundColor: "#00E276",
+    alignSelf: "flex-end",
+    borderBottomRightRadius: 4,
+  },
+  chatBubbleDoctor: {
+    backgroundColor: "#333",
+    alignSelf: "flex-start",
+    borderBottomLeftRadius: 4,
+  },
+  chatBubbleText: {
+    fontSize: 14,
+    fontFamily: Fonts.regular,
+    lineHeight: 20,
+  },
+  chatBubbleTextPatient: {
+    color: "#000",
+  },
+  chatBubbleTextDoctor: {
+    color: "#fff",
+  },
+  chatBubbleTime: {
+    fontSize: 10,
+    color: "rgba(255,255,255,0.5)",
+    marginTop: 4,
+    textAlign: "right",
+  },
+  chatInputRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    padding: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#333",
+    gap: 8,
+  },
+  chatInput: {
+    flex: 1,
+    backgroundColor: "#2a2a3e",
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    color: "#fff",
+    fontSize: 14,
+    fontFamily: Fonts.regular,
+    maxHeight: 80,
+  },
+  chatSendButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#00E276",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  chatSendButtonDisabled: {
+    backgroundColor: "#444",
+  },
+  chatSendIcon: {
+    fontSize: 20,
+    color: "#fff",
   },
 });

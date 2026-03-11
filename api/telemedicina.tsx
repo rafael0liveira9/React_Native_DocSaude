@@ -438,6 +438,55 @@ class TelemedicinaService {
       throw error;
     }
   }
+  /**
+   * Enviar mensagem com imagem no chat
+   */
+  async sendChatMessageWithAttachment(
+    appointmentId: number,
+    message: string,
+    imageUri: string
+  ): Promise<boolean> {
+    try {
+      const formData = new FormData();
+      formData.append("message", message);
+      formData.append("attachment", {
+        uri: imageUri,
+        type: "image/jpeg",
+        name: "attachment.jpg",
+      } as any);
+
+      const response = await api.post(
+        `/telemedicina/appointment/${appointmentId}/chat/attachment`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      return response.data.success;
+    } catch (error) {
+      console.error("[TELEMEDICINA] Erro ao enviar anexo:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Enviar avaliação pós-consulta
+   */
+  async submitRating(
+    appointmentId: number,
+    rating: number,
+    message?: string
+  ): Promise<boolean> {
+    try {
+      console.log("[TELEMEDICINA] Enviando avaliação:", appointmentId, rating);
+      const response = await api.post(
+        `/telemedicina/appointment/${appointmentId}/rating`,
+        { rating, message }
+      );
+      return response.data.success;
+    } catch (error) {
+      console.error("[TELEMEDICINA] Erro ao enviar avaliação:", error);
+      throw error;
+    }
+  }
 }
 
 export default new TelemedicinaService();

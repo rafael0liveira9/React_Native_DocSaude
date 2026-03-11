@@ -45,6 +45,14 @@ export default function TelemedicinaLayout() {
           gestureEnabled: false,
         }}
       />
+      <Stack.Screen
+        name="avaliacao"
+        options={{
+          title: "Avaliacao",
+          headerShown: false,
+          gestureEnabled: false,
+        }}
+      />
     </Stack>
   );
 }
