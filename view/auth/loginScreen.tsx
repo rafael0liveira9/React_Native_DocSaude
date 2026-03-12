@@ -130,34 +130,39 @@ export default function LoginScreen() {
 
       console.log("[LOGIN_SCREEN] Iniciando processo de login...");
       const res = await handleLogin(cpf, password);
-      console.log("[LOGIN_SCREEN] Resposta do handleLogin:", {
-        hasData: !!res?.data,
-        hasToken: !!res?.data?.token,
-        hasUser: !!res?.data?.user,
-      });
 
-      if (res?.data?.token) {
+      if (res && "error" in res) {
+        if (res.error === "network") {
+          setTexterror("* Erro de conexão. Verifique sua internet.");
+          Toast.show({
+            type: "error",
+            text1: "Erro de conexão",
+            text2: "Verifique sua internet e tente novamente.",
+          });
+        } else {
+          setTexterror("* CPF ou senha incorretos.");
+          Toast.show({
+            type: "error",
+            text1: "CPF ou senha incorretos.",
+          });
+        }
+      } else if (res && "data" in res && res.data?.token) {
         try {
-          console.log("[LOGIN_SCREEN] Token recebido, processando dados do usuário");
-          setUserToken(res?.data.token);
-          setUserName(res?.data?.user?.nome || cpf);
-          setUserId(res?.data?.user?.id);
+          setUserToken(res.data.token);
+          setUserName(res.data?.user?.nome || cpf);
+          setUserId(res.data?.user?.id);
 
           if (res.pushToken) {
-            console.log("[LOGIN_SCREEN] Salvando push token");
             await SecureStore.setItemAsync("expo-push-token", res.pushToken);
           }
 
-          const termoAceito = res?.data?.user?.termo_uso_aceito;
-          console.log("[LOGIN_SCREEN] Verificando termo de uso:", termoAceito);
+          const termoAceito = res.data?.user?.termo_uso_aceito;
 
           if (!termoAceito || termoAceito === 0) {
-            console.log("[LOGIN_SCREEN] Termo não aceito, exibindo modal");
             setShowTermsModal(true);
           } else {
-            console.log("[LOGIN_SCREEN] Termo já aceito, salvando tokens e redirecionando");
-            await setTokens(res?.data.token, res?.data?.user?.id);
-            await successLogin(res?.data?.user?.nome || cpf);
+            await setTokens(res.data.token, res.data?.user?.id);
+            await successLogin(res.data?.user?.nome || cpf);
           }
         } catch (error) {
           console.error("[LOGIN_SCREEN] Erro ao processar login:", error);
@@ -168,7 +173,6 @@ export default function LoginScreen() {
           });
         }
       } else {
-        console.warn("[LOGIN_SCREEN] Login falhou: sem token na resposta");
         setTexterror("* CPF ou senha incorretos.");
         Toast.show({
           type: "error",

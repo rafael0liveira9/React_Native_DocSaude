@@ -23,41 +23,31 @@ if (!isExpoGo) {
  * Login com CPF e senha
  */
 export async function Login(cpf: string, password: string) {
-  try {
-    const cleanCpf = cpf.replace(/\D/g, "");
-    console.log("[API] Tentando login para CPF:", cleanCpf);
+  const cleanCpf = cpf.replace(/\D/g, "");
+  console.log("[API] Tentando login para CPF:", cleanCpf);
 
-    const response = await api.post("/auth/login", {
-      cpf: cleanCpf,
-      senha: password,
-    });
+  const response = await api.post("/auth/login", {
+    cpf: cleanCpf,
+    senha: password,
+  });
 
-    console.log("[API] Resposta recebida:", {
-      status: response.status,
-      success: response.data?.success,
-      hasToken: !!response.data?.data?.token,
-      hasUser: !!response.data?.data?.user,
-    });
+  console.log("[API] Resposta recebida:", {
+    status: response.status,
+    success: response.data?.success,
+    hasToken: !!response.data?.data?.token,
+    hasUser: !!response.data?.data?.user,
+  });
 
-    if (response.data.success) {
-      return {
-        id: response.data.data.user.id,
-        token: response.data.data.token,
-        user: response.data.data.user,
-        dependentes: response.data.data.dependentes || [],
-      };
-    }
-    console.warn("[API] Login falhou: success = false");
-    return null;
-  } catch (error: any) {
-    console.error("[API] Erro no login:", {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-      url: error.config?.url,
-    });
-    return null;
+  if (response.data.success) {
+    return {
+      id: response.data.data.user.id,
+      token: response.data.data.token,
+      user: response.data.data.user,
+      dependentes: response.data.data.dependentes || [],
+    };
   }
+  console.warn("[API] Login falhou: success = false");
+  return null;
 }
 
 /**
@@ -107,22 +97,14 @@ export async function GetMyData(userId: number, token: string) {
 /**
  * Função principal de login
  */
-export async function handleLogin(cpf: string, password: string) {
+export async function handleLogin(cpf: string, password: string): Promise<{ data: any; pushToken?: string } | { error: string }> {
   try {
     console.log("[LOGIN] Iniciando login...");
     const response = await Login(cpf, password);
 
     if (!response) {
-      console.log("[LOGIN] Login falhou: resposta vazia da API");
-      if (crashlytics) {
-        crashlytics().log("Login falhou: dados inválidos");
-        crashlytics().recordError(
-          new Error("Login falhou: CPF ou senha incorretos")
-        );
-      } else {
-        console.log("[MOCK] Login falhou: dados inválidos");
-      }
-      return null;
+      console.log("[LOGIN] Login falhou: credenciais inválidas");
+      return { error: "credentials" };
     }
 
     console.log("[LOGIN] Login bem-sucedido, registrando analytics...");
@@ -132,26 +114,18 @@ export async function handleLogin(cpf: string, password: string) {
           userId: response.id,
           cpf: response.user.cpf,
         });
-        console.log("[LOGIN] Analytics registrado com sucesso");
       } catch (error) {
         console.warn("[LOGIN] Erro ao registrar analytics, continuando...", error);
       }
-    } else {
-      console.log("[MOCK] Login success event logged");
     }
 
     // Registra token de push notifications - não bloquear login se falhar
     let pushToken;
     try {
-      console.log("[LOGIN] Registrando push notifications...");
       pushToken = await registerForPushNotificationsAsync();
-      console.log("[LOGIN] Push token obtido:", pushToken ? "sucesso" : "sem token");
-
-      // Envia token para o backend se foi obtido com sucesso
       if (pushToken && pushToken !== "expo-go-mock-token") {
         try {
           await registerDeviceToken(pushToken, response.id);
-          console.log("[LOGIN] Token registrado no backend");
         } catch (error) {
           console.warn("[LOGIN] Erro ao registrar token no backend, continuando...", error);
         }
@@ -166,17 +140,21 @@ export async function handleLogin(cpf: string, password: string) {
       pushToken,
     };
   } catch (error: any) {
-    console.error("[LOGIN] Erro crítico no login:", error);
+    console.error("[LOGIN] Erro no login:", {
+      message: error.message,
+      status: error.response?.status,
+      code: error.code,
+    });
     if (crashlytics) {
-      try {
-        crashlytics().recordError(error);
-      } catch (e) {
-        console.warn("[LOGIN] Erro ao registrar no crashlytics:", e);
-      }
-    } else {
-      console.log("[MOCK] Error logged:", error);
+      try { crashlytics().recordError(error); } catch (e) {}
     }
-    return null;
+    // Diferenciar erro de rede vs credenciais
+    if (error.response) {
+      // Servidor respondeu com erro (401, 400, etc)
+      return { error: "credentials" };
+    }
+    // Erro de rede (timeout, DNS, sem internet)
+    return { error: "network" };
   }
 }
 
