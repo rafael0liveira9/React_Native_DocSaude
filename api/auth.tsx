@@ -26,6 +26,15 @@ export async function Login(cpf: string, password: string) {
   const cleanCpf = cpf.replace(/\D/g, "");
   console.log("[API] Tentando login para CPF:", cleanCpf);
 
+  // Debug: testar conectividade com fetch nativo antes do axios
+  try {
+    const testRes = await fetch("https://vpaa97q6g8.execute-api.us-east-1.amazonaws.com/dev");
+    const testData = await testRes.json();
+    console.log("[API] Teste fetch nativo OK:", testData);
+  } catch (fetchErr: any) {
+    console.error("[API] Teste fetch nativo FALHOU:", fetchErr.message);
+  }
+
   const response = await api.post("/auth/login", {
     cpf: cleanCpf,
     senha: password,

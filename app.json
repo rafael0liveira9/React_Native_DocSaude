@@ -30,7 +30,11 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "Precisamos acessar sua câmera para realizar videochamadas com médicos.",
-        "NSMicrophoneUsageDescription": "Precisamos acessar seu microfone para realizar videochamadas com médicos."
+        "NSMicrophoneUsageDescription": "Precisamos acessar seu microfone para realizar videochamadas com médicos.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSAllowsLocalNetworking": true
+        }
       }
     },
     "android": {
