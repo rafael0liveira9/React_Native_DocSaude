@@ -21,6 +21,7 @@ import {
   View,
 } from "react-native";
 import Toast from "react-native-toast-message";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function LoginScreen() {
   const themeColors = Colors["dark"],
@@ -33,7 +34,8 @@ export default function LoginScreen() {
     [showTermsModal, setShowTermsModal] = useState<boolean>(false),
     [userToken, setUserToken] = useState<string>(""),
     [userId, setUserId] = useState<any>(null),
-    [userName, setUserName] = useState<string>("");
+    [userName, setUserName] = useState<string>(""),
+    [showPassword, setShowPassword] = useState<boolean>(false);
 
   // Formatar CPF
   const formatCPF = (value: string) => {
@@ -133,11 +135,12 @@ export default function LoginScreen() {
 
       if (res && "error" in res) {
         if (res.error === "network") {
-          setTexterror("* Erro de conexão. Verifique sua internet.");
+          const detail = (res as any).detail || "";
+          setTexterror(`* Erro de conexão. ${detail}`);
           Toast.show({
             type: "error",
             text1: "Erro de conexão",
-            text2: "Verifique sua internet e tente novamente.",
+            text2: detail || "Verifique sua internet e tente novamente.",
           });
         } else {
           setTexterror("* CPF ou senha incorretos.");
@@ -239,20 +242,39 @@ export default function LoginScreen() {
           ]}
         />
 
-        <TextInput
-          placeholder="Senha"
-          placeholderTextColor="#ccc"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          style={[
-            styles.loginInputStyle,
-            {
-              borderColor: themeColors.backgroundSecondary,
-              color: themeColors.backgroundSecondary,
-            },
-          ]}
-        />
+        <View style={{ width: "100%", position: "relative" }}>
+          <TextInput
+            placeholder="Senha"
+            placeholderTextColor="#ccc"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            style={[
+              styles.loginInputStyle,
+              {
+                borderColor: themeColors.backgroundSecondary,
+                color: themeColors.backgroundSecondary,
+                paddingRight: 50,
+              },
+            ]}
+          />
+          <TouchableOpacity
+            onPress={() => setShowPassword(!showPassword)}
+            style={{
+              position: "absolute",
+              right: 15,
+              top: 0,
+              bottom: 0,
+              justifyContent: "center",
+            }}
+          >
+            <Ionicons
+              name={showPassword ? "eye-off" : "eye"}
+              size={24}
+              color="#ccc"
+            />
+          </TouchableOpacity>
+        </View>
 
         <View style={{ height: 10 }} />
 

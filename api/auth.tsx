@@ -154,7 +154,7 @@ export async function handleLogin(cpf: string, password: string): Promise<{ data
       return { error: "credentials" };
     }
     // Erro de rede (timeout, DNS, sem internet)
-    return { error: "network" };
+    return { error: "network", detail: `${error.code || ''} ${error.message || ''}`.trim() };
   }
 }
 
