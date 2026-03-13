@@ -26,33 +26,30 @@ export async function Login(cpf: string, password: string) {
   const cleanCpf = cpf.replace(/\D/g, "");
   console.log("[API] Tentando login para CPF:", cleanCpf);
 
-  // Debug: testar conectividade com fetch nativo antes do axios
-  try {
-    const testRes = await fetch("https://vpaa97q6g8.execute-api.us-east-1.amazonaws.com/dev");
-    const testData = await testRes.json();
-    console.log("[API] Teste fetch nativo OK:", testData);
-  } catch (fetchErr: any) {
-    console.error("[API] Teste fetch nativo FALHOU:", fetchErr.message);
-  }
+  const API_URL = "https://vpaa97q6g8.execute-api.us-east-1.amazonaws.com/dev";
 
-  const response = await api.post("/auth/login", {
-    cpf: cleanCpf,
-    senha: password,
+  // Usar fetch nativo em vez de axios para evitar ERR_NETWORK no iOS
+  const fetchResponse = await fetch(`${API_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ cpf: cleanCpf, senha: password }),
   });
+
+  const data = await fetchResponse.json();
 
   console.log("[API] Resposta recebida:", {
-    status: response.status,
-    success: response.data?.success,
-    hasToken: !!response.data?.data?.token,
-    hasUser: !!response.data?.data?.user,
+    status: fetchResponse.status,
+    success: data?.success,
+    hasToken: !!data?.data?.token,
+    hasUser: !!data?.data?.user,
   });
 
-  if (response.data.success) {
+  if (data.success) {
     return {
-      id: response.data.data.user.id,
-      token: response.data.data.token,
-      user: response.data.data.user,
-      dependentes: response.data.data.dependentes || [],
+      id: data.data.user.id,
+      token: data.data.token,
+      user: data.data.user,
+      dependentes: data.data.dependentes || [],
     };
   }
   console.warn("[API] Login falhou: success = false");
@@ -157,12 +154,7 @@ export async function handleLogin(cpf: string, password: string): Promise<{ data
     if (crashlytics) {
       try { crashlytics().recordError(error); } catch (e) {}
     }
-    // Diferenciar erro de rede vs credenciais
-    if (error.response) {
-      // Servidor respondeu com erro (401, 400, etc)
-      return { error: "credentials" };
-    }
-    // Erro de rede (timeout, DNS, sem internet)
+    // Com fetch, qualquer throw é erro de rede (fetch não rejeita em 4xx/5xx)
     return { error: "network", detail: `${error.code || ''} ${error.message || ''}`.trim() };
   }
 }
