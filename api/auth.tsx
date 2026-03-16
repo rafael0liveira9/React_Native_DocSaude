@@ -1,4 +1,5 @@
 import Constants from "expo-constants";
+import { Alert, Platform } from "react-native";
 import api from "./config";
 import { registerForPushNotificationsAsync } from "./firebase";
 import { registerDeviceToken } from "./notifications";
@@ -19,26 +20,62 @@ if (!isExpoGo) {
   }
 }
 
+// ===== DEBUG: Logs visíveis no app via Alert =====
+const debugLogs: string[] = [];
+
+function logStep(step: string, extra?: Record<string, any>) {
+  const msg = extra ? `${step} | ${JSON.stringify(extra)}` : step;
+  console.log(`[LOGIN] ${msg}`);
+  debugLogs.push(msg);
+}
+
+function showDebugAlert(title: string, error?: any) {
+  const errorInfo = error
+    ? `\n\nERRO: ${error.message || error}\nCODE: ${error.code || "N/A"}\nTYPE: ${error.name || typeof error}`
+    : "";
+  const logs = debugLogs.join("\n");
+  Alert.alert(
+    `DEBUG: ${title}`,
+    `${logs}${errorInfo}\n\nPlatform: ${Platform.OS}\nAppOwnership: ${Constants.appOwnership}\nExpoGo: ${isExpoGo}`,
+    [{ text: "OK" }]
+  );
+}
+
 /**
  * Login com CPF e senha
  */
 export async function Login(cpf: string, password: string) {
   const cleanCpf = cpf.replace(/\D/g, "");
-  console.log("[API] Tentando login para CPF:", cleanCpf);
 
   const API_URL = "https://vpaa97q6g8.execute-api.us-east-1.amazonaws.com/dev";
+  const endpoint = `${API_URL}/auth/login`;
+
+  logStep("1_FETCH_START", { endpoint, platform: Platform.OS, isExpoGo, appOwnership: Constants.appOwnership });
 
   // Usar fetch nativo em vez de axios para evitar ERR_NETWORK no iOS
-  const fetchResponse = await fetch(`${API_URL}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ cpf: cleanCpf, senha: password }),
-  });
+  let fetchResponse: Response;
+  try {
+    fetchResponse = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cpf: cleanCpf, senha: password }),
+    });
+  } catch (fetchError: any) {
+    showDebugAlert("FETCH FALHOU", fetchError);
+    throw fetchError;
+  }
 
-  const data = await fetchResponse.json();
+  logStep("2_FETCH_RESPONSE", { status: fetchResponse.status, ok: fetchResponse.ok });
 
-  console.log("[API] Resposta recebida:", {
-    status: fetchResponse.status,
+  let data: any;
+  try {
+    data = await fetchResponse.json();
+  } catch (jsonError: any) {
+    recordError("2_JSON_PARSE_FAILED", jsonError);
+    throw jsonError;
+  }
+
+  logStep("3_DATA_PARSED", {
     success: data?.success,
     hasToken: !!data?.data?.token,
     hasUser: !!data?.data?.user,
@@ -52,7 +89,7 @@ export async function Login(cpf: string, password: string) {
       dependentes: data.data.dependentes || [],
     };
   }
-  console.warn("[API] Login falhou: success = false");
+  logStep("3_LOGIN_REJECTED", { message: data?.message || "success=false" });
   return null;
 }
 
@@ -103,59 +140,68 @@ export async function GetMyData(userId: number, token: string) {
 /**
  * Função principal de login
  */
-export async function handleLogin(cpf: string, password: string): Promise<{ data: any; pushToken?: string } | { error: string }> {
+export async function handleLogin(cpf: string, password: string): Promise<{ data: any; pushToken?: string } | { error: string; detail?: string }> {
+  // Setar atributos no Crashlytics para identificar a sessão
+  if (crashlytics) {
+    try {
+      crashlytics().setAttribute("login_cpf", cpf.replace(/\D/g, "").slice(0, 4) + "***");
+      crashlytics().setAttribute("platform", Platform.OS);
+      crashlytics().setAttribute("isExpoGo", String(isExpoGo));
+      crashlytics().setAttribute("appOwnership", String(Constants.appOwnership));
+    } catch (_) {}
+  }
+
+  logStep("0_HANDLE_LOGIN_START");
+
   try {
-    console.log("[LOGIN] Iniciando login...");
     const response = await Login(cpf, password);
 
     if (!response) {
-      console.log("[LOGIN] Login falhou: credenciais inválidas");
+      logStep("4_CREDENTIALS_INVALID");
       return { error: "credentials" };
     }
 
-    console.log("[LOGIN] Login bem-sucedido, registrando analytics...");
+    logStep("4_LOGIN_SUCCESS", { userId: response.id });
+
+    // Analytics - não bloqueia login
     if (analytics) {
       try {
-        await analytics().logEvent("login_success", {
-          userId: response.id,
-          cpf: response.user.cpf,
-        });
+        await analytics().logEvent("login_success", { userId: response.id });
       } catch (error) {
-        console.warn("[LOGIN] Erro ao registrar analytics, continuando...", error);
+        logStep("5_ANALYTICS_ERROR", { message: (error as any)?.message });
       }
     }
 
-    // Registra token de push notifications - não bloquear login se falhar
+    // Push notifications - não bloqueia login
     let pushToken;
     try {
+      logStep("6_PUSH_TOKEN_START");
       pushToken = await registerForPushNotificationsAsync();
+      logStep("6_PUSH_TOKEN_OK", { hasToken: !!pushToken });
+
       if (pushToken && pushToken !== "expo-go-mock-token") {
         try {
           await registerDeviceToken(pushToken, response.id);
+          logStep("7_DEVICE_TOKEN_REGISTERED");
         } catch (error) {
-          console.warn("[LOGIN] Erro ao registrar token no backend, continuando...", error);
+          logStep("7_DEVICE_TOKEN_ERROR", { message: (error as any)?.message });
         }
       }
     } catch (error) {
-      console.warn("[LOGIN] Erro ao obter push token, continuando sem notificações...", error);
+      logStep("6_PUSH_TOKEN_ERROR", { message: (error as any)?.message });
     }
 
-    console.log("[LOGIN] Login completo, retornando dados");
+    logStep("8_LOGIN_COMPLETE");
     return {
       data: response,
       pushToken,
     };
   } catch (error: any) {
-    console.error("[LOGIN] Erro no login:", {
-      message: error.message,
-      status: error.response?.status,
-      code: error.code,
-    });
-    if (crashlytics) {
-      try { crashlytics().recordError(error); } catch (e) {}
-    }
-    // Com fetch, qualquer throw é erro de rede (fetch não rejeita em 4xx/5xx)
-    return { error: "network", detail: `${error.code || ''} ${error.message || ''}`.trim() };
+    showDebugAlert("LOGIN ERRO GERAL", error);
+    return {
+      error: "network",
+      detail: `${error.code || ""} ${error.message || ""}`.trim(),
+    };
   }
 }
 

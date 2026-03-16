@@ -1,10 +1,10 @@
-import api from "./config";
 import * as SecureStore from "expo-secure-store";
+
+const API_URL = "https://vpaa97q6g8.execute-api.us-east-1.amazonaws.com/dev";
 
 /**
  * Registra ou atualiza o token FCM do dispositivo no backend
- * @param token Token FCM do dispositivo
- * @param userId ID do usuário (opcional, será pego do SecureStore se não fornecido)
+ * Usa fetch nativo (axios falha em builds iOS nativas/TestFlight)
  */
 export async function registerDeviceToken(
   token: string,
@@ -22,21 +22,30 @@ export async function registerDeviceToken(
       return false;
     }
 
-    const response = await api.put(`/assinantes/${id}/firebase-token`, {
-      firebase_token: token,
+    const authToken = await SecureStore.getItemAsync("user-token");
+
+    const response = await fetch(`${API_URL}/assinantes/${id}/firebase-token`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      },
+      body: JSON.stringify({ firebase_token: token }),
     });
 
-    if (response.data.success) {
+    const data = await response.json();
+
+    if (data.success) {
       console.log("Token FCM registrado no backend com sucesso");
       return true;
     }
 
-    console.warn("Falha ao registrar token FCM:", response.data);
+    console.warn("Falha ao registrar token FCM:", data);
     return false;
   } catch (error: any) {
     console.error(
       "Erro ao registrar token no backend:",
-      error.response?.data || error.message
+      error.message
     );
     return false;
   }
@@ -44,7 +53,6 @@ export async function registerDeviceToken(
 
 /**
  * Remove o token FCM do dispositivo no backend (envia null)
- * @param token Token FCM a ser removido (não usado — limpa o campo no backend)
  */
 export async function deleteDeviceTokenFromBackend(
   token: string
@@ -56,21 +64,30 @@ export async function deleteDeviceTokenFromBackend(
       return false;
     }
 
-    const response = await api.put(`/assinantes/${stored}/firebase-token`, {
-      firebase_token: null,
+    const authToken = await SecureStore.getItemAsync("user-token");
+
+    const response = await fetch(`${API_URL}/assinantes/${stored}/firebase-token`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      },
+      body: JSON.stringify({ firebase_token: null }),
     });
 
-    if (response.data.success) {
+    const data = await response.json();
+
+    if (data.success) {
       console.log("Token FCM removido do backend com sucesso");
       return true;
     }
 
-    console.warn("Falha ao remover token FCM:", response.data);
+    console.warn("Falha ao remover token FCM:", data);
     return false;
   } catch (error: any) {
     console.error(
       "Erro ao deletar token do backend:",
-      error.response?.data || error.message
+      error.message
     );
     return false;
   }
@@ -78,20 +95,15 @@ export async function deleteDeviceTokenFromBackend(
 
 /**
  * Atualiza o token quando ele é renovado
- * @param oldToken Token antigo (opcional)
- * @param newToken Novo token
  */
 export async function updateDeviceToken(
   newToken: string,
   oldToken?: string
 ): Promise<boolean> {
   try {
-    // Se temos o token antigo, deletamos primeiro
     if (oldToken && oldToken !== newToken) {
       await deleteDeviceTokenFromBackend(oldToken);
     }
-
-    // Registra o novo token
     return await registerDeviceToken(newToken);
   } catch (error: any) {
     console.error("Erro ao atualizar token:", error);

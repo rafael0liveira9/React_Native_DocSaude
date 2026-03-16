@@ -1,4 +1,6 @@
 import { GetMyData } from "@/api/auth";
+import { registerForPushNotificationsAsync } from "@/api/firebase";
+import { registerDeviceToken } from "@/api/notifications";
 import { LogoutModal } from "@/components/fragments/modalLogout";
 import Header from "@/components/header";
 import HomeMain from "@/components/homeMain";
@@ -56,6 +58,16 @@ export default function HomeScreen() {
       if (data) {
         setUser(data);
         buildCardsArray(data);
+
+        // Registrar/atualizar token de push no backend
+        try {
+          const pushToken = await registerForPushNotificationsAsync();
+          if (pushToken && pushToken !== "expo-go-mock-token") {
+            await registerDeviceToken(pushToken, Number(userId));
+          }
+        } catch (e) {
+          console.warn("[HOME] Erro ao registrar push token:", e);
+        }
       } else {
         console.log("Não foi possível carregar os dados do usuário");
         await forceLogout();
