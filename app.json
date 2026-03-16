@@ -20,6 +20,9 @@
         }
       ],
       "expo-web-browser",
+      "@react-native-firebase/app",
+      "@react-native-firebase/messaging",
+      "@react-native-firebase/crashlytics",
       "./plugins/withModularHeaders.js"
     ],
     "ios": {
@@ -27,10 +30,14 @@
       "googleServicesFile": "./GoogleService-Info.plist",
       "usesAppleSignIn": true,
       "supportsTablet": true,
+      "entitlements": {
+        "aps-environment": "production"
+      },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "Precisamos acessar sua câmera para realizar videochamadas com médicos.",
         "NSMicrophoneUsageDescription": "Precisamos acessar seu microfone para realizar videochamadas com médicos.",
+        "UIBackgroundModes": ["remote-notification"],
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
           "NSAllowsLocalNetworking": true
