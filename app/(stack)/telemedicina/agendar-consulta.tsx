@@ -600,9 +600,9 @@ export default function AgendarConsultaScreen() {
     }
 
     // Calendar view (byTime default, or byProfessional after selecting professional)
-    const activeDatesSet = scheduleMode === "byProfessional" && selectedProfessionalName
-      ? new Set(slotsForProfessional.dates_available)
-      : datesAvailableSet;
+    // Usar datas globais em ambos os modos - os slots do profissional só são
+    // carregados ao selecionar uma data, então slotsForProfessional estaria vazio aqui
+    const activeDatesSet = datesAvailableSet;
 
     const calendarDaysForMode = (() => {
       const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
