@@ -1,5 +1,5 @@
 import Constants from "expo-constants";
-import { Alert, Platform } from "react-native";
+import { Platform } from "react-native";
 import api from "./config";
 import { registerForPushNotificationsAsync } from "./firebase";
 import { registerDeviceToken } from "./notifications";
@@ -20,25 +20,9 @@ if (!isExpoGo) {
   }
 }
 
-// ===== DEBUG: Logs visíveis no app via Alert =====
-const debugLogs: string[] = [];
-
 function logStep(step: string, extra?: Record<string, any>) {
   const msg = extra ? `${step} | ${JSON.stringify(extra)}` : step;
   console.log(`[LOGIN] ${msg}`);
-  debugLogs.push(msg);
-}
-
-function showDebugAlert(title: string, error?: any) {
-  const errorInfo = error
-    ? `\n\nERRO: ${error.message || error}\nCODE: ${error.code || "N/A"}\nTYPE: ${error.name || typeof error}`
-    : "";
-  const logs = debugLogs.join("\n");
-  Alert.alert(
-    `DEBUG: ${title}`,
-    `${logs}${errorInfo}\n\nPlatform: ${Platform.OS}\nAppOwnership: ${Constants.appOwnership}\nExpoGo: ${isExpoGo}`,
-    [{ text: "OK" }]
-  );
 }
 
 /**
@@ -61,7 +45,7 @@ export async function Login(cpf: string, password: string) {
       body: JSON.stringify({ cpf: cleanCpf, senha: password }),
     });
   } catch (fetchError: any) {
-    showDebugAlert("FETCH FALHOU", fetchError);
+    logStep("1_FETCH_FAILED", { message: fetchError.message, code: fetchError.code });
     throw fetchError;
   }
 
@@ -197,7 +181,7 @@ export async function handleLogin(cpf: string, password: string): Promise<{ data
       pushToken,
     };
   } catch (error: any) {
-    showDebugAlert("LOGIN ERRO GERAL", error);
+    logStep("HANDLE_LOGIN_CATCH", { message: error.message, code: error.code });
     return {
       error: "network",
       detail: `${error.code || ""} ${error.message || ""}`.trim(),

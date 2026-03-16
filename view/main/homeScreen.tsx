@@ -12,7 +12,7 @@ import * as SecureStore from "expo-secure-store";
 import * as WebBrowser from "expo-web-browser";
 import { useRouter } from "expo-router";
 import { useContext, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Linking, View } from "react-native";
+import { ActivityIndicator, Linking, View } from "react-native";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -62,13 +62,11 @@ export default function HomeScreen() {
         // Registrar/atualizar token de push no backend
         try {
           const pushToken = await registerForPushNotificationsAsync();
-          const tokenResult = pushToken && pushToken !== "expo-go-mock-token"
-            ? await registerDeviceToken(pushToken, Number(userId))
-            : false;
-          // DEBUG: remover depois de confirmar que funciona
-          Alert.alert("DEBUG Push Token", `Token: ${pushToken || "NULL"}\nRegistrado: ${tokenResult}\nUserId: ${userId}`);
-        } catch (e: any) {
-          Alert.alert("DEBUG Push Error", e?.message || String(e));
+          if (pushToken && pushToken !== "expo-go-mock-token") {
+            await registerDeviceToken(pushToken, Number(userId));
+          }
+        } catch (e) {
+          console.warn("[HOME] Erro ao registrar push token:", e);
         }
       } else {
         console.log("Não foi possível carregar os dados do usuário");
