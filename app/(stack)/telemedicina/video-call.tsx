@@ -72,7 +72,8 @@ export default function VideoCallScreen() {
     }
   };
 
-  const navigateToRating = () => {
+  const navigateToRating = async () => {
+    await telemedicinaService.finishAppointment(appointmentId);
     router.replace({
       pathname: "/(stack)/telemedicina/avaliacao" as any,
       params: { appointmentId: appointmentId.toString() },

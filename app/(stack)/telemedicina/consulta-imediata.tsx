@@ -123,8 +123,12 @@ export default function ConsultaImediataScreen() {
       });
 
       // Evento: Consulta finalizada
-      channel.bind("finish_stream", (data: any) => {
+      channel.bind("finish_stream", async (data: any) => {
         console.log("[PUSHER] >>> FINISH_STREAM:", data);
+        const currentId = appointmentIdRef.current;
+        if (currentId) {
+          await telemedicinaService.finishAppointment(currentId);
+        }
         Toast.show({
           type: "info",
           text1: "Consulta finalizada",

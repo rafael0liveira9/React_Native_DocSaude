@@ -396,6 +396,24 @@ class TelemedicinaService {
   }
 
   /**
+   * Finalizar atendimento (chamado quando recebe finish_stream)
+   */
+  async finishAppointment(appointmentId: number): Promise<boolean> {
+    try {
+      console.log("[TELEMEDICINA] Finalizando atendimento:", appointmentId);
+      const response = await api.post(`/telemedicina/appointment/${appointmentId}/finish`);
+      if (response.data.success) {
+        console.log("[TELEMEDICINA] Atendimento finalizado com sucesso");
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("[TELEMEDICINA] Erro ao finalizar:", error);
+      return false;
+    }
+  }
+
+  /**
    * Buscar mensagens do chat
    */
   async getChatMessages(appointmentId: number): Promise<any[]> {
