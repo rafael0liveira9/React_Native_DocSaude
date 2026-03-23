@@ -17,6 +17,7 @@ interface CustomSelectProps {
   onValueChange: (value: string) => void;
   themeColors: any;
   enabled?: boolean;
+  compact?: boolean;
 }
 
 export default function CustomSelect({
@@ -26,6 +27,7 @@ export default function CustomSelect({
   onValueChange,
   themeColors,
   enabled = true,
+  compact = false,
 }: CustomSelectProps) {
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -40,15 +42,15 @@ export default function CustomSelect({
   return (
     <View
       style={{
-        marginBottom: 10,
-        borderColor: themeColors.black,
-        borderWidth: 2,
-        borderRadius: 12,
-        paddingHorizontal: 12,
+        marginBottom: compact ? 6 : 10,
+        borderColor: compact ? "#DDD" : themeColors.black,
+        borderWidth: compact ? 1.5 : 2,
+        borderRadius: compact ? 10 : 12,
+        paddingHorizontal: compact ? 10 : 12,
         backgroundColor: enabled
           ? themeColors.white || "#FFF"
           : "#F5F5F5",
-        height: 60,
+        height: compact ? 42 : 60,
         justifyContent: "center",
         opacity: enabled ? 1 : 0.6,
       }}
@@ -65,16 +67,18 @@ export default function CustomSelect({
       >
         <Text
           style={{
-            fontSize: 16,
+            fontSize: compact ? 14 : 16,
             fontFamily: Fonts.regular,
             color: isPlaceholder ? "#999" : "#000",
+            flex: 1,
           }}
+          numberOfLines={1}
         >
           {displayText}
         </Text>
         <Ionicons
           name="chevron-down"
-          size={20}
+          size={compact ? 18 : 20}
           color={themeColors.black || "#000"}
         />
       </TouchableOpacity>

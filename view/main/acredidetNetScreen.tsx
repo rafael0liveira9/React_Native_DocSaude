@@ -212,27 +212,26 @@ export default function AcreditedNetScreen() {
       <View style={{
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "space-between",
         paddingHorizontal: 16,
-        paddingVertical: 12,
-        marginBottom: 10,
+        paddingVertical: 10,
+        marginBottom: 4,
+        gap: 12,
       }}>
         <TouchableOpacity
           style={{ padding: 4 }}
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={28} color={themeColors.text} />
+          <Ionicons name="chevron-back" size={26} color={themeColors.text} />
         </TouchableOpacity>
         <Text style={{
-          fontSize: 20,
+          fontSize: 18,
           fontWeight: "bold",
           fontFamily: Fonts.bold,
           color: themeColors.text,
         }}>
           Rede Credenciada
         </Text>
-        <View style={{ width: 28 }} />
       </View>
 
       <ScrollView
@@ -262,14 +261,13 @@ export default function AcreditedNetScreen() {
           openNowText={openNowText}
           setOpenNowText={setOpenNowText}
         />
-        <View style={{ width: "83%" }}>
+        <View style={{ width: "90%", marginTop: 16, marginBottom: 10 }}>
           <Text
             style={{
-              marginTop: 30,
-              marginBottom: 30,
-              fontWeight: 800,
+              fontWeight: "700",
               fontFamily: Fonts.bold,
-              fontSize: 26,
+              fontSize: 18,
+              color: themeColors.text,
             }}
           >
             Resultado da busca
