@@ -392,7 +392,8 @@ export default function VideoCallScreen() {
           break;
 
         case "error":
-          Alert.alert("Erro", message.data);
+          console.warn("[VIDEO_CALL] Erro WebView:", message.data);
+          setLoading(false); // Mostrar chat mesmo se video falhar
           break;
       }
     } catch (error) {
