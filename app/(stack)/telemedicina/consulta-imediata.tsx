@@ -158,11 +158,12 @@ export default function ConsultaImediataScreen() {
       console.log("[CONSULTA_IMEDIATA] Token obtido, iniciando videochamada");
 
       // Navegar para tela de videochamada com os dados
+      // API retorna snake_case: session_id, api_key, token
       router.push({
         pathname: "/(stack)/telemedicina/video-call" as any,
         params: {
-          apiKey: videoData.apiKey,
-          sessionId: videoData.sessionId,
+          apiKey: videoData.api_key,
+          sessionId: videoData.session_id,
           token: videoData.token,
           appointmentId: currentAppointmentId.toString(),
         },
