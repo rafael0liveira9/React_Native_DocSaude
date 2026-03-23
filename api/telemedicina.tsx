@@ -467,7 +467,7 @@ class TelemedicinaService {
     try {
       console.log("[TELEMEDICINA] Enviando anexo via PusherMonitor:", appointmentId);
 
-      const PUSHER_MONITOR_URL = "http://pushermonitor-dev.eba-nh5nqacx.us-east-1.elasticbeanstalk.com";
+      const PUSHER_MONITOR_URL = "https://d2mkjjllj6mdmr.cloudfront.net";
 
       const formData = new FormData();
       if (message) formData.append("message", message);
