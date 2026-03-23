@@ -465,20 +465,29 @@ class TelemedicinaService {
     imageUri: string
   ): Promise<boolean> {
     try {
+      console.log("[TELEMEDICINA] Enviando anexo via PusherMonitor:", appointmentId);
+
+      const PUSHER_MONITOR_URL = "http://pushermonitor-dev.eba-nh5nqacx.us-east-1.elasticbeanstalk.com";
+
       const formData = new FormData();
-      formData.append("message", message);
+      if (message) formData.append("message", message);
       formData.append("attachment", {
         uri: imageUri,
         type: "image/jpeg",
         name: "attachment.jpg",
       } as any);
 
-      const response = await api.post(
-        `/telemedicina/appointment/${appointmentId}/chat/attachment`,
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+      const response = await fetch(
+        `${PUSHER_MONITOR_URL}/chat/attachment/${appointmentId}`,
+        {
+          method: "POST",
+          body: formData,
+        }
       );
-      return response.data.success;
+
+      const data = await response.json();
+      console.log("[TELEMEDICINA] Anexo enviado:", data.success);
+      return data.success;
     } catch (error) {
       console.error("[TELEMEDICINA] Erro ao enviar anexo:", error);
       throw error;

@@ -128,13 +128,13 @@ export default function ConsultaImediataScreen() {
         const currentId = appointmentIdRef.current;
         if (currentId) {
           await telemedicinaService.finishAppointment(currentId);
+          router.replace({
+            pathname: "/(stack)/telemedicina/avaliacao" as any,
+            params: { appointmentId: currentId.toString() },
+          });
+        } else {
+          router.back();
         }
-        Toast.show({
-          type: "info",
-          text1: "Consulta finalizada",
-          text2: "Obrigado por usar nosso serviço",
-        });
-        router.back();
       });
 
       console.log("[PUSHER] Setup completo, aguardando eventos...");
