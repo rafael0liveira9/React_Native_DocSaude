@@ -31,6 +31,12 @@ export default function ConsultaImediataScreen() {
   const [caseAttendanceId, setCaseAttendanceId] = useState<string | null>(null);
   const pusherRef = useRef<Pusher | null>(null);
   const channelRef = useRef<any>(null);
+  const appointmentIdRef = useRef<number | null>(appointmentId);
+
+  // Mantém o ref sincronizado com o state
+  useEffect(() => {
+    appointmentIdRef.current = appointmentId;
+  }, [appointmentId]);
 
   useEffect(() => {
     if (params.appointmentId) {
@@ -135,11 +141,15 @@ export default function ConsultaImediataScreen() {
 
   const startVideoCall = async () => {
     try {
-      if (!appointmentId) return;
+      const currentAppointmentId = appointmentIdRef.current;
+      if (!currentAppointmentId) {
+        console.error("[CONSULTA_IMEDIATA] startVideoCall: appointmentId é null");
+        return;
+      }
 
-      console.log("[CONSULTA_IMEDIATA] Obtendo token de video...");
+      console.log("[CONSULTA_IMEDIATA] Obtendo token de video para appointment:", currentAppointmentId);
 
-      const videoData = await telemedicinaService.getVideoToken(appointmentId);
+      const videoData = await telemedicinaService.getVideoToken(currentAppointmentId);
 
       console.log("[CONSULTA_IMEDIATA] Token obtido, iniciando videochamada");
 
@@ -150,7 +160,7 @@ export default function ConsultaImediataScreen() {
           apiKey: videoData.apiKey,
           sessionId: videoData.sessionId,
           token: videoData.token,
-          appointmentId: appointmentId.toString(),
+          appointmentId: currentAppointmentId.toString(),
         },
       });
     } catch (error) {
