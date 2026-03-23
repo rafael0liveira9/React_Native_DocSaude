@@ -17,8 +17,10 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { Image } from "react-native";
 import { WebView } from "react-native-webview";
 import Toast from "react-native-toast-message";
+import * as ImagePicker from "expo-image-picker";
 import telemedicinaService from "@/api/telemedicina";
 
 export default function VideoCallScreen() {
@@ -69,6 +71,93 @@ export default function VideoCallScreen() {
       Toast.show({ type: "error", text1: "Erro ao enviar mensagem" });
     } finally {
       setSendingChat(false);
+    }
+  };
+
+  const handlePickAttachment = async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert("Permissão necessária", "Precisamos acessar sua galeria para enviar imagens.");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        quality: 0.7,
+        allowsEditing: false,
+      });
+
+      if (result.canceled || !result.assets?.[0]) return;
+
+      const imageUri = result.assets[0].uri;
+
+      Alert.alert(
+        "Enviar imagem",
+        "Deseja enviar esta imagem no chat?",
+        [
+          { text: "Cancelar", style: "cancel" },
+          {
+            text: "Enviar",
+            onPress: async () => {
+              try {
+                setSendingChat(true);
+                await telemedicinaService.sendChatMessageWithAttachment(
+                  appointmentId,
+                  chatText.trim() || "",
+                  imageUri
+                );
+                setChatText("");
+                await fetchChatMessages();
+                Toast.show({ type: "success", text1: "Imagem enviada" });
+              } catch (error) {
+                Toast.show({ type: "error", text1: "Erro ao enviar imagem" });
+              } finally {
+                setSendingChat(false);
+              }
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error("[VIDEO_CALL] Erro ao selecionar imagem:", error);
+    }
+  };
+
+  const handleTakePhoto = async () => {
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert("Permissão necessária", "Precisamos acessar sua câmera para tirar fotos.");
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        quality: 0.7,
+        allowsEditing: false,
+      });
+
+      if (result.canceled || !result.assets?.[0]) return;
+
+      const imageUri = result.assets[0].uri;
+
+      try {
+        setSendingChat(true);
+        await telemedicinaService.sendChatMessageWithAttachment(
+          appointmentId,
+          chatText.trim() || "",
+          imageUri
+        );
+        setChatText("");
+        await fetchChatMessages();
+        Toast.show({ type: "success", text1: "Foto enviada" });
+      } catch (error) {
+        Toast.show({ type: "error", text1: "Erro ao enviar foto" });
+      } finally {
+        setSendingChat(false);
+      }
+    } catch (error) {
+      console.error("[VIDEO_CALL] Erro ao tirar foto:", error);
     }
   };
 
@@ -506,16 +595,25 @@ export default function VideoCallScreen() {
                       : styles.chatBubbleDoctor,
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.chatBubbleText,
-                      item.sender_type === "patient"
-                        ? styles.chatBubbleTextPatient
-                        : styles.chatBubbleTextDoctor,
-                    ]}
-                  >
-                    {item.message}
-                  </Text>
+                  {item.attachment ? (
+                    <Image
+                      source={{ uri: item.attachment }}
+                      style={styles.chatAttachmentImage}
+                      resizeMode="cover"
+                    />
+                  ) : null}
+                  {item.message ? (
+                    <Text
+                      style={[
+                        styles.chatBubbleText,
+                        item.sender_type === "patient"
+                          ? styles.chatBubbleTextPatient
+                          : styles.chatBubbleTextDoctor,
+                      ]}
+                    >
+                      {item.message}
+                    </Text>
+                  ) : null}
                   <Text style={styles.chatBubbleTime}>
                     {item.sender_type === "patient" ? "Voce" : "Medico"}
                   </Text>
@@ -525,6 +623,20 @@ export default function VideoCallScreen() {
 
             {/* Input */}
             <View style={styles.chatInputRow}>
+              <TouchableOpacity
+                style={styles.chatAttachButton}
+                onPress={handlePickAttachment}
+                disabled={sendingChat}
+              >
+                <Text style={styles.chatAttachIcon}>📎</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.chatAttachButton}
+                onPress={handleTakePhoto}
+                disabled={sendingChat}
+              >
+                <Text style={styles.chatAttachIcon}>📷</Text>
+              </TouchableOpacity>
               <TextInput
                 style={styles.chatInput}
                 value={chatText}
@@ -742,5 +854,21 @@ const styles = StyleSheet.create({
   chatSendIcon: {
     fontSize: 20,
     color: "#fff",
+  },
+  chatAttachButton: {
+    width: 36,
+    height: 36,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 4,
+  },
+  chatAttachIcon: {
+    fontSize: 20,
+  },
+  chatAttachmentImage: {
+    width: 200,
+    height: 150,
+    borderRadius: 8,
+    marginBottom: 4,
   },
 });
