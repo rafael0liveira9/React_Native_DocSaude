@@ -212,10 +212,12 @@ export default function AcreditedNetScreen() {
       <View style={{
         flexDirection: "row",
         alignItems: "center",
+        alignSelf: "flex-start",
+        width: "100%",
         paddingHorizontal: 16,
         paddingVertical: 10,
         marginBottom: 4,
-        gap: 12,
+        gap: 8,
       }}>
         <TouchableOpacity
           style={{ padding: 4 }}
