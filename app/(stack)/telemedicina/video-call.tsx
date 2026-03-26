@@ -477,6 +477,7 @@ export default function VideoCallScreen() {
           onMessage={handleWebViewMessage}
           mediaPlaybackRequiresUserAction={false}
           allowsInlineMediaPlayback={true}
+          mediaCapturePermissionGrantType="grant"
           javaScriptEnabled={true}
           domStorageEnabled={true}
           androidLayerType="hardware"
