@@ -12,6 +12,7 @@ import {
   Alert,
 } from "react-native";
 import telemedicinaService from "@/api/telemedicina";
+import { logCrash } from "@/api/firebase";
 import Toast from "react-native-toast-message";
 import Pusher from "pusher-js/react-native";
 
@@ -140,6 +141,7 @@ export default function ConsultaImediataScreen() {
       console.log("[PUSHER] Setup completo, aguardando eventos...");
     } catch (error) {
       console.error("[CONSULTA_IMEDIATA] Erro ao configurar Pusher:", error);
+      logCrash(`[CONSULTA_IMEDIATA] Erro Pusher: ${error}`);
     }
   };
 
@@ -170,6 +172,7 @@ export default function ConsultaImediataScreen() {
       });
     } catch (error) {
       console.error("[CONSULTA_IMEDIATA] Erro ao iniciar videochamada:", error);
+      logCrash(`[CONSULTA_IMEDIATA] Erro videochamada: ${error}`);
       Toast.show({
         type: "error",
         text1: "Erro ao iniciar videochamada",
@@ -212,6 +215,7 @@ export default function ConsultaImediataScreen() {
 
     } catch (error: any) {
       console.error("[CONSULTA_IMEDIATA] Erro ao retomar atendimento:", error);
+      logCrash(`[CONSULTA_IMEDIATA] Erro retomar: ${error}`);
       setStatus("error");
     }
   };
@@ -262,6 +266,7 @@ export default function ConsultaImediataScreen() {
 
     } catch (error: any) {
       console.error("[CONSULTA_IMEDIATA] Erro ao criar consulta:", error);
+      logCrash(`[CONSULTA_IMEDIATA] Erro criar consulta: ${error}`);
       setStatus("error");
       Alert.alert(
         "Erro",

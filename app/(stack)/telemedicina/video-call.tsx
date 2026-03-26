@@ -22,6 +22,7 @@ import Toast from "react-native-toast-message";
 import * as ImagePicker from "expo-image-picker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import telemedicinaService from "@/api/telemedicina";
+import { logCrash } from "@/api/firebase";
 
 export default function VideoCallScreen() {
   const router = useRouter();
@@ -75,6 +76,7 @@ export default function VideoCallScreen() {
         })
         .catch((err) => {
           console.error("[VIDEO_CALL] Erro ao solicitar permissões:", err);
+          logCrash(`[VIDEO_CALL] Erro permissões: ${err}`);
         });
     }
   }, []);
@@ -439,11 +441,13 @@ export default function VideoCallScreen() {
           break;
         case "error":
           console.warn("[VIDEO_CALL] Erro WebView:", message.data);
+          logCrash(`[VIDEO_CALL] WebView erro: ${message.data}`);
           setLoading(false);
           break;
       }
     } catch (error) {
       console.error("[VIDEO_CALL] Erro ao processar mensagem:", error);
+      logCrash(`[VIDEO_CALL] Erro processar mensagem: ${error}`);
     }
   };
 
