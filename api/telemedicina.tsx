@@ -423,7 +423,11 @@ class TelemedicinaService {
       );
 
       if (response.data.success) {
-        return response.data.data || [];
+        const messages = response.data.data || [];
+        if (messages.length > 0) {
+          console.log("[TELEMEDICINA] Chat msg exemplo:", JSON.stringify(messages[messages.length - 1]));
+        }
+        return messages;
       }
 
       return [];
@@ -467,7 +471,7 @@ class TelemedicinaService {
     try {
       console.log("[TELEMEDICINA] Enviando anexo via PusherMonitor:", appointmentId);
 
-      const PUSHER_MONITOR_URL = "https://d2mkjjllj6mdmr.cloudfront.net";
+      const PUSHER_MONITOR_URL = "http://pushermonitor-dev.eba-nh5nqacx.us-east-1.elasticbeanstalk.com";
 
       const formData = new FormData();
       if (message) formData.append("message", message);
@@ -485,7 +489,15 @@ class TelemedicinaService {
         }
       );
 
-      const data = await response.json();
+      const responseText = await response.text();
+      console.log("[TELEMEDICINA] Anexo response status:", response.status);
+      console.log("[TELEMEDICINA] Anexo response body:", responseText.substring(0, 500));
+
+      if (!response.ok) {
+        throw new Error(`Erro ${response.status}: ${responseText.substring(0, 200)}`);
+      }
+
+      const data = JSON.parse(responseText);
       console.log("[TELEMEDICINA] Anexo enviado:", data.success);
       return data.success;
     } catch (error) {

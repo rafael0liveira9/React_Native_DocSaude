@@ -183,9 +183,19 @@ export default function ConsultaImediataScreen() {
 
       // Buscar status do appointment existente (sem criar novo)
       const statusData = await telemedicinaService.getAppointmentStatus(existingAppointmentId);
+      console.log("[CONSULTA_IMEDIATA] Status do atendimento:", statusData?.status);
 
       setAppointmentId(existingAppointmentId);
       if (statusData?.case_attendance_id) setCaseAttendanceId(String(statusData.case_attendance_id));
+
+      // Se o atendimento já está em andamento, ir direto para videochamada
+      const activeStatuses = ["in_progress", "streaming", "assigned", "started"];
+      if (statusData?.status && activeStatuses.includes(statusData.status)) {
+        console.log("[CONSULTA_IMEDIATA] Atendimento já em andamento, indo direto para videochamada");
+        setStatus("assigned");
+        startVideoCall();
+        return;
+      }
 
       setStatus("waiting");
 

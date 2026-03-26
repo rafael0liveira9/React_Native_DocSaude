@@ -40,7 +40,7 @@ export default function AvaliacaoScreen() {
         type: "success",
         text1: "Obrigado pela sua avaliacao!",
       });
-      router.dismiss(2); // Volta 2 telas (avaliacao + video-call)
+      router.replace("/(main)");
     } catch (error) {
       console.error("[AVALIACAO] Erro:", error);
       Toast.show({ type: "error", text1: "Erro ao enviar avaliacao" });
@@ -50,7 +50,7 @@ export default function AvaliacaoScreen() {
   };
 
   const handleSkip = () => {
-    router.dismiss(2);
+    router.replace("/(main)");
   };
 
   const getRatingEmoji = (value: number) => {
