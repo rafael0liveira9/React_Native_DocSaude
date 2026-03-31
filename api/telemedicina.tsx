@@ -416,7 +416,7 @@ class TelemedicinaService {
   /**
    * Buscar mensagens do chat
    */
-  async getChatMessages(appointmentId: number): Promise<any[]> {
+  async getChatMessages(appointmentId: number): Promise<{ messages: any[] }> {
     try {
       const response = await api.get(
         `/telemedicina/appointment/${appointmentId}/chat`
@@ -424,13 +424,10 @@ class TelemedicinaService {
 
       if (response.data.success) {
         const messages = response.data.data || [];
-        if (messages.length > 0) {
-          console.log("[TELEMEDICINA] Chat msg exemplo:", JSON.stringify(messages[messages.length - 1]));
-        }
-        return messages;
+        return { messages };
       }
 
-      return [];
+      return { messages: [] };
     } catch (error) {
       console.error("[TELEMEDICINA] Erro ao buscar chat:", error);
       throw error;
@@ -469,9 +466,15 @@ class TelemedicinaService {
     imageUri: string
   ): Promise<boolean> {
     try {
-      console.log("[TELEMEDICINA] Enviando anexo via PusherMonitor:", appointmentId);
-
       const PUSHER_MONITOR_URL = "http://pushermonitor-dev.eba-nh5nqacx.us-east-1.elasticbeanstalk.com";
+      const uploadUrl = `${PUSHER_MONITOR_URL}/chat/attachment/${appointmentId}`;
+
+      console.log("[UPLOAD] ========== INICIO UPLOAD ==========");
+      console.log("[UPLOAD] Timestamp:", new Date().toISOString());
+      console.log("[UPLOAD] URL:", uploadUrl);
+      console.log("[UPLOAD] appointmentId:", appointmentId);
+      console.log("[UPLOAD] imageUri:", imageUri);
+      console.log("[UPLOAD] message:", message || "(vazio)");
 
       const formData = new FormData();
       if (message) formData.append("message", message);
@@ -481,24 +484,35 @@ class TelemedicinaService {
         name: "attachment.jpg",
       } as any);
 
-      const response = await fetch(
-        `${PUSHER_MONITOR_URL}/chat/attachment/${appointmentId}`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      console.log("[UPLOAD] FormData montado - enviando fetch POST...");
+      const startTime = Date.now();
 
+      const response = await fetch(uploadUrl, {
+        method: "POST",
+        body: formData,
+      });
+
+      const elapsed = Date.now() - startTime;
       const responseText = await response.text();
-      console.log("[TELEMEDICINA] Anexo response status:", response.status);
-      console.log("[TELEMEDICINA] Anexo response body:", responseText.substring(0, 500));
+
+      console.log("[UPLOAD] Response status:", response.status);
+      console.log("[UPLOAD] Response tempo:", elapsed + "ms");
+      console.log("[UPLOAD] Response headers:", JSON.stringify({
+        'content-type': response.headers.get('content-type'),
+        'content-length': response.headers.get('content-length'),
+      }));
+      console.log("[UPLOAD] Response body:", responseText.substring(0, 500));
 
       if (!response.ok) {
+        console.error("[UPLOAD] FALHA - status:", response.status);
+        console.log("[UPLOAD] ========== FIM UPLOAD (ERRO) ==========");
         throw new Error(`Erro ${response.status}: ${responseText.substring(0, 200)}`);
       }
 
       const data = JSON.parse(responseText);
-      console.log("[TELEMEDICINA] Anexo enviado:", data.success);
+      console.log("[UPLOAD] Sucesso:", data.success);
+      console.log("[UPLOAD] Teladoc response:", JSON.stringify(data.teladocResponse || {}).substring(0, 300));
+      console.log("[UPLOAD] ========== FIM UPLOAD ==========");
       return data.success;
     } catch (error) {
       console.error("[TELEMEDICINA] Erro ao enviar anexo:", error);

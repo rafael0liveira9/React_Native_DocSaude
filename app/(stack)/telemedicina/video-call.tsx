@@ -39,10 +39,11 @@ export default function VideoCallScreen() {
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [chatText, setChatText] = useState("");
   const [sendingChat, setSendingChat] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [pendingImageUri, setPendingImageUri] = useState<string | null>(null);
   const [permissionsGranted, setPermissionsGranted] = useState(
     Platform.OS !== "android"
   );
-  const [patientSenderId, setPatientSenderId] = useState<number | null>(null);
   const webViewRef = useRef<WebView>(null);
   const chatPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -92,8 +93,8 @@ export default function VideoCallScreen() {
   // Polling de mensagens do chat
   const fetchChatMessages = useCallback(async () => {
     try {
-      const messages = await telemedicinaService.getChatMessages(appointmentId);
-      setChatMessages(messages);
+      const result = await telemedicinaService.getChatMessages(appointmentId);
+      setChatMessages(result.messages);
     } catch (error) {
       // silencioso - polling
     }
@@ -113,13 +114,7 @@ export default function VideoCallScreen() {
       setSendingChat(true);
       await telemedicinaService.sendChatMessage(appointmentId, chatText.trim());
       setChatText("");
-      const msgs = await telemedicinaService.getChatMessages(appointmentId);
-      setChatMessages(msgs);
-      // Captura o sender_id do paciente pela última mensagem enviada
-      if (!patientSenderId && msgs.length > 0) {
-        const lastMsg = msgs[msgs.length - 1];
-        setPatientSenderId(lastMsg.sender_id);
-      }
+      await fetchChatMessages();
     } catch (error) {
       Toast.show({ type: "error", text1: "Erro ao enviar mensagem" });
     } finally {
@@ -127,7 +122,47 @@ export default function VideoCallScreen() {
     }
   };
 
+  const restartWebViewCamera = () => {
+    if (webViewRef.current) {
+      webViewRef.current.injectJavaScript(`
+        if (typeof publisher !== 'undefined' && publisher) {
+          publisher.publishVideo(false);
+          setTimeout(function() {
+            publisher.publishVideo(true);
+            if (typeof videoEnabled !== 'undefined') videoEnabled = true;
+            var btn = document.getElementById('toggleVideo');
+            if (btn) { btn.textContent = '📹'; btn.classList.remove('off'); }
+          }, 500);
+        }
+        true;
+      `);
+    }
+  };
+
+  const sendImageAttachment = async (imageUri: string, fromCamera?: boolean) => {
+    try {
+      setUploadingImage(true);
+      setPendingImageUri(imageUri);
+      const msg = chatText.trim() || "";
+      await telemedicinaService.sendChatMessageWithAttachment(
+        appointmentId,
+        msg,
+        imageUri
+      );
+      setChatText("");
+      await fetchChatMessages();
+      Toast.show({ type: "success", text1: "Imagem enviada" });
+    } catch (error) {
+      Toast.show({ type: "error", text1: "Erro ao enviar imagem" });
+    } finally {
+      setUploadingImage(false);
+      setPendingImageUri(null);
+      if (fromCamera) restartWebViewCamera();
+    }
+  };
+
   const handlePickAttachment = async () => {
+    if (uploadingImage) return;
     try {
       const permission =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -153,23 +188,7 @@ export default function VideoCallScreen() {
         { text: "Cancelar", style: "cancel" },
         {
           text: "Enviar",
-          onPress: async () => {
-            try {
-              setSendingChat(true);
-              await telemedicinaService.sendChatMessageWithAttachment(
-                appointmentId,
-                chatText.trim() || "",
-                imageUri
-              );
-              setChatText("");
-              await fetchChatMessages();
-              Toast.show({ type: "success", text1: "Imagem enviada" });
-            } catch (error) {
-              Toast.show({ type: "error", text1: "Erro ao enviar imagem" });
-            } finally {
-              setSendingChat(false);
-            }
-          },
+          onPress: () => sendImageAttachment(imageUri),
         },
       ]);
     } catch (error) {
@@ -178,6 +197,7 @@ export default function VideoCallScreen() {
   };
 
   const handleTakePhoto = async () => {
+    if (uploadingImage) return;
     try {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
@@ -193,27 +213,15 @@ export default function VideoCallScreen() {
         allowsEditing: false,
       });
 
-      if (result.canceled || !result.assets?.[0]) return;
-
-      const imageUri = result.assets[0].uri;
-
-      try {
-        setSendingChat(true);
-        await telemedicinaService.sendChatMessageWithAttachment(
-          appointmentId,
-          chatText.trim() || "",
-          imageUri
-        );
-        setChatText("");
-        await fetchChatMessages();
-        Toast.show({ type: "success", text1: "Foto enviada" });
-      } catch (error) {
-        Toast.show({ type: "error", text1: "Erro ao enviar foto" });
-      } finally {
-        setSendingChat(false);
+      if (result.canceled || !result.assets?.[0]) {
+        restartWebViewCamera();
+        return;
       }
+
+      await sendImageAttachment(result.assets[0].uri, true);
     } catch (error) {
       console.error("[VIDEO_CALL] Erro ao tirar foto:", error);
+      restartWebViewCamera();
     }
   };
 
@@ -544,20 +552,12 @@ export default function VideoCallScreen() {
               keyExtractor={(item, index) => String(item.id || index)}
               inverted
               contentContainerStyle={styles.chatMessagesList}
-              ListEmptyComponent={
-                <View style={styles.chatEmpty}>
-                  <Text style={styles.chatEmptyText}>
-                    Nenhuma mensagem ainda
-                  </Text>
-                </View>
-              }
+              ListEmptyComponent={<View style={styles.chatEmpty} />}
               renderItem={({ item }) => (
                 <View
                   style={[
                     styles.chatBubble,
-                    patientSenderId && item.sender_id === patientSenderId
-                      ? styles.chatBubblePatient
-                      : styles.chatBubbleDoctor,
+                    styles.chatBubblePatient,
                   ]}
                 >
                   {item.attachment ? (
@@ -571,25 +571,32 @@ export default function VideoCallScreen() {
                     <Text
                       style={[
                         styles.chatBubbleText,
-                        patientSenderId && item.sender_id === patientSenderId
-                          ? styles.chatBubbleTextPatient
-                          : styles.chatBubbleTextDoctor,
+                        styles.chatBubbleTextPatient,
                       ]}
                     >
                       {item.message}
                     </Text>
                   ) : null}
-                  <Text style={[
-                    styles.chatBubbleTime,
-                    patientSenderId && item.sender_id === patientSenderId
-                      ? { color: "rgba(0,0,0,0.5)" }
-                      : undefined,
-                  ]}>
-                    {patientSenderId && item.sender_id === patientSenderId ? "Você" : "Medico"}
+                  <Text style={[styles.chatBubbleTime, { color: "rgba(0,0,0,0.5)" }]}>
+                    Você
                   </Text>
                 </View>
               )}
             />
+
+            {uploadingImage && (
+              <View style={styles.uploadingBar}>
+                {pendingImageUri && (
+                  <Image
+                    source={{ uri: pendingImageUri }}
+                    style={styles.uploadingPreview}
+                    resizeMode="cover"
+                  />
+                )}
+                <ActivityIndicator size="small" color="#00E276" />
+                <Text style={styles.uploadingText}>Enviando imagem...</Text>
+              </View>
+            )}
 
             <View
               style={[
@@ -598,16 +605,16 @@ export default function VideoCallScreen() {
               ]}
             >
               <TouchableOpacity
-                style={styles.chatAttachButton}
+                style={[styles.chatAttachButton, (sendingChat || uploadingImage) && { opacity: 0.4 }]}
                 onPress={handlePickAttachment}
-                disabled={sendingChat}
+                disabled={sendingChat || uploadingImage}
               >
                 <Text style={styles.chatAttachIcon}>📎</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.chatAttachButton}
+                style={[styles.chatAttachButton, (sendingChat || uploadingImage) && { opacity: 0.4 }]}
                 onPress={handleTakePhoto}
-                disabled={sendingChat}
+                disabled={sendingChat || uploadingImage}
               >
                 <Text style={styles.chatAttachIcon}>📷</Text>
               </TouchableOpacity>
@@ -619,15 +626,16 @@ export default function VideoCallScreen() {
                 placeholderTextColor="#888"
                 multiline
                 maxLength={500}
+                editable={!uploadingImage}
               />
               <TouchableOpacity
                 style={[
                   styles.chatSendButton,
-                  (!chatText.trim() || sendingChat) &&
+                  (!chatText.trim() || sendingChat || uploadingImage) &&
                     styles.chatSendButtonDisabled,
                 ]}
                 onPress={handleSendChat}
-                disabled={!chatText.trim() || sendingChat}
+                disabled={!chatText.trim() || sendingChat || uploadingImage}
               >
                 {sendingChat ? (
                   <ActivityIndicator size="small" color="#fff" />
@@ -845,5 +853,25 @@ const styles = StyleSheet.create({
     height: 150,
     borderRadius: 8,
     marginBottom: 4,
+  },
+  uploadingBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: "#2a2a3e",
+    borderTopWidth: 1,
+    borderTopColor: "#333",
+    gap: 8,
+  },
+  uploadingPreview: {
+    width: 36,
+    height: 36,
+    borderRadius: 6,
+  },
+  uploadingText: {
+    color: "#aaa",
+    fontSize: 13,
+    fontFamily: Fonts.regular,
   },
 });
