@@ -11,12 +11,12 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  Pressable,
   SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import Toast from "react-native-toast-message";
@@ -344,13 +344,13 @@ export default function TelemedicinaMenuScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.topBar}>
-          <TouchableOpacity
+          <Pressable
             style={styles.backButton}
             onPress={() => router.back()}
-            activeOpacity={0.7}
+
           >
             <Ionicons name="chevron-back" size={28} color={themeColors.text} />
-          </TouchableOpacity>
+          </Pressable>
           <Text style={[styles.pageTitle, { color: themeColors.text }]}>
             Telemedicina
           </Text>
@@ -365,11 +365,11 @@ export default function TelemedicinaMenuScreen() {
 
         {/* Banners de consultas imediatas em andamento */}
         {immediateAppointments.map((apt) => (
-          <TouchableOpacity
+          <Pressable
             key={apt.id}
             style={styles.resumeBanner}
             onPress={() => handleResumeAppointment(apt)}
-            activeOpacity={0.8}
+
           >
             <View style={styles.resumeIconContainer}>
               <Ionicons name="videocam" size={24} color="#fff" />
@@ -392,7 +392,7 @@ export default function TelemedicinaMenuScreen() {
               <Text style={styles.resumeButtonText}>Retomar</Text>
               <Ionicons name="arrow-forward" size={16} color="#fff" />
             </View>
-          </TouchableOpacity>
+          </Pressable>
         ))}
 
         {/* Cards de consultas agendadas */}
@@ -462,22 +462,22 @@ export default function TelemedicinaMenuScreen() {
                     {/* Ações */}
                     <View style={styles.scheduledCardActions}>
                       {soon && (
-                        <TouchableOpacity
+                        <Pressable
                           style={styles.enterButton}
                           onPress={() => handleResumeAppointment(apt)}
-                          activeOpacity={0.8}
+              
                         >
                           <Ionicons name="videocam" size={16} color="#fff" />
                           <Text style={styles.enterButtonText}>Entrar na consulta</Text>
-                        </TouchableOpacity>
+                        </Pressable>
                       )}
-                      <TouchableOpacity
+                      <Pressable
                         style={styles.cancelTextButton}
                         onPress={() => handleCancelAppointment(apt)}
-                        activeOpacity={0.7}
+            
                       >
                         <Text style={styles.cancelTextButtonLabel}>Cancelar</Text>
-                      </TouchableOpacity>
+                      </Pressable>
                     </View>
                   </View>
                 </View>
@@ -488,10 +488,10 @@ export default function TelemedicinaMenuScreen() {
 
         <View style={styles.cardsContainer}>
           {/* Card: Consultar Agora */}
-          <TouchableOpacity
+          <Pressable
             style={[styles.card, styles.immediateCard]}
             onPress={handleConsultarAgora}
-            activeOpacity={0.8}
+
           >
             <View style={styles.cardHeader}>
               <View style={[styles.iconContainer, { backgroundColor: "#ffffff" }]}>
@@ -505,13 +505,13 @@ export default function TelemedicinaMenuScreen() {
             <Text style={styles.cardDescription}>
               Atendimento com médico de plantão por videochamada
             </Text>
-          </TouchableOpacity>
+          </Pressable>
 
           {/* Card: Agendar Consulta */}
-          <TouchableOpacity
+          <Pressable
             style={[styles.card, styles.scheduleCard]}
             onPress={handleAgendarConsulta}
-            activeOpacity={0.8}
+
           >
             <View style={styles.cardHeader}>
               <View style={[styles.iconContainer, { backgroundColor: "#ffffff" }]}>
@@ -525,7 +525,7 @@ export default function TelemedicinaMenuScreen() {
             <Text style={styles.cardDescription}>
               Escolha especialidade, data e horário para sua teleconsulta
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         <View style={styles.infoSection}>
@@ -563,11 +563,11 @@ export default function TelemedicinaMenuScreen() {
 
             <View style={styles.pacienteList}>
               {pacientes.map((p) => (
-                <TouchableOpacity
+                <Pressable
                   key={p.id}
                   style={styles.pacienteItem}
                   onPress={() => handleSelectPaciente(p)}
-                  activeOpacity={0.7}
+      
                 >
                   <View style={[styles.pacienteAvatar, p.isTitular && styles.pacienteAvatarTitular]}>
                     <Ionicons
@@ -583,20 +583,20 @@ export default function TelemedicinaMenuScreen() {
                     </Text>
                   </View>
                   <Ionicons name="chevron-forward" size={20} color="#ccc" />
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </View>
 
-            <TouchableOpacity
+            <Pressable
               style={styles.pacienteModalCancel}
               onPress={() => {
                 setShowPacienteModal(false);
                 setPendingAction(null);
               }}
-              activeOpacity={0.7}
+  
             >
               <Text style={styles.pacienteModalCancelText}>Cancelar</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
       </Modal>

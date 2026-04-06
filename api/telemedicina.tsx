@@ -320,8 +320,13 @@ class TelemedicinaService {
       }
 
       throw new Error("Falha ao obter token de vídeo");
-    } catch (error) {
-      console.error("[TELEMEDICINA] Erro ao obter token de vídeo:", error);
+    } catch (error: any) {
+      // 400 = médico ainda não abriu a sala, é esperado
+      if (error.response?.status === 400) {
+        console.log("[TELEMEDICINA] Sala de vídeo ainda não disponível");
+      } else {
+        console.error("[TELEMEDICINA] Erro ao obter token de vídeo:", error);
+      }
       throw error;
     }
   }

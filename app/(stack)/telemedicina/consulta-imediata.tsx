@@ -6,7 +6,7 @@ import { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   StyleSheet,
   Alert,
@@ -30,6 +30,7 @@ export default function ConsultaImediataScreen() {
   );
   const [estimatedWait, setEstimatedWait] = useState<number | null>(null);
   const [caseAttendanceId, setCaseAttendanceId] = useState<string | null>(null);
+  const pusherConfigRef = useRef<{ key: string; cluster: string; channel: string } | null>(null);
   const pusherRef = useRef<Pusher | null>(null);
   const channelRef = useRef<any>(null);
   const appointmentIdRef = useRef<number | null>(appointmentId);
@@ -69,6 +70,8 @@ export default function ConsultaImediataScreen() {
         console.warn("[CONSULTA_IMEDIATA] Pusher key ou channel ausente:", pusherConfig);
         return;
       }
+
+      pusherConfigRef.current = { key: pusherKey, cluster: pusherCluster, channel: pusherConfig.channel };
 
       console.log(`[PUSHER] Inicializando: key=${pusherKey}, cluster=${pusherCluster}`);
       console.log(`[PUSHER] Canal: ${pusherConfig.channel}`);
@@ -124,18 +127,10 @@ export default function ConsultaImediataScreen() {
       });
 
       // Evento: Consulta finalizada
-      channel.bind("finish_stream", async (data: any) => {
-        console.log("[PUSHER] >>> FINISH_STREAM:", data);
-        const currentId = appointmentIdRef.current;
-        if (currentId) {
-          await telemedicinaService.finishAppointment(currentId);
-          router.replace({
-            pathname: "/(stack)/telemedicina/avaliacao" as any,
-            params: { appointmentId: currentId.toString() },
-          });
-        } else {
-          router.back();
-        }
+      // finish_stream é tratado pela tela de video-call, não aqui
+      // Apenas loga para debug
+      channel.bind("finish_stream", (data: any) => {
+        console.log("[PUSHER] >>> FINISH_STREAM (consulta-imediata, ignorando - tratado no video-call):", data);
       });
 
       console.log("[PUSHER] Setup completo, aguardando eventos...");
@@ -168,6 +163,9 @@ export default function ConsultaImediataScreen() {
           sessionId: videoData.session_id,
           token: videoData.token,
           appointmentId: currentAppointmentId.toString(),
+          pusherKey: pusherConfigRef.current?.key || "",
+          pusherCluster: pusherConfigRef.current?.cluster || "",
+          pusherChannel: pusherConfigRef.current?.channel || "",
         },
       });
     } catch (error) {
@@ -200,6 +198,32 @@ export default function ConsultaImediataScreen() {
         return;
       }
 
+      // Tentar buscar video token — se o médico já abriu a sala, vai direto pro vídeo
+      try {
+        console.log("[CONSULTA_IMEDIATA] Verificando se médico já está na sala...");
+        const videoData = await telemedicinaService.getVideoToken(existingAppointmentId);
+        if (videoData?.session_id) {
+          console.log("[CONSULTA_IMEDIATA] Médico já na sala! Indo direto para videochamada");
+          setStatus("assigned");
+          Toast.show({ type: "success", text1: "Médico encontrado!", text2: "Entrando na videochamada..." });
+          router.push({
+            pathname: "/(stack)/telemedicina/video-call" as any,
+            params: {
+              apiKey: videoData.api_key,
+              sessionId: videoData.session_id,
+              token: videoData.token,
+              appointmentId: existingAppointmentId.toString(),
+              pusherKey: statusData?.pusher?.key || "",
+              pusherCluster: statusData?.pusher?.cluster || "",
+              pusherChannel: statusData?.pusher?.channel || "",
+            },
+          });
+          return;
+        }
+      } catch (e) {
+        console.log("[CONSULTA_IMEDIATA] Médico ainda não na sala, aguardando...");
+      }
+
       setStatus("waiting");
 
       // Reconectar ao Pusher se tiver config
@@ -210,7 +234,7 @@ export default function ConsultaImediataScreen() {
       Toast.show({
         type: "info",
         text1: "Atendimento retomado",
-        text2: "Aguardando médico disponível...",
+        text2: "Aguardando médico...",
       });
 
     } catch (error: any) {
@@ -355,12 +379,16 @@ export default function ConsultaImediataScreen() {
               />
             </View>
             <Text style={[styles.statusTitle, { color: themeColors.text }]}>
-              Procurando médico disponível
+              {params.appointmentId ? "Aguardando Médico" : "Procurando médico disponível"}
             </Text>
             <Text style={styles.statusDescription}>
-              {params.pacienteNome
-                ? `${params.pacienteNome.split(" ")[0]} está na fila de atendimento.`
-                : "Você está na fila de atendimento."}
+              {params.appointmentId
+                ? (params.pacienteNome
+                    ? `Consulta agendada para ${params.pacienteNome.split(" ")[0]}.`
+                    : "Sua consulta agendada está pronta.")
+                : (params.pacienteNome
+                    ? `${params.pacienteNome.split(" ")[0]} está na fila de atendimento.`
+                    : "Você está na fila de atendimento.")}
               {"\n"}Em breve um médico irá atendê-lo.
             </Text>
 
@@ -378,13 +406,12 @@ export default function ConsultaImediataScreen() {
               </Text>
             </View>
 
-            <TouchableOpacity
+            <Pressable
               style={styles.cancelButton}
               onPress={handleCancel}
-              activeOpacity={0.8}
             >
               <Text style={styles.cancelButtonText}>Cancelar Consulta</Text>
-            </TouchableOpacity>
+            </Pressable>
           </>
         );
 
@@ -412,12 +439,12 @@ export default function ConsultaImediataScreen() {
             <Text style={styles.statusDescription}>
               Não foi possível criar a consulta. Por favor, tente novamente.
             </Text>
-            <TouchableOpacity
+            <Pressable
               style={[styles.button, { backgroundColor: themeColors.tint }]}
               onPress={() => router.back()}
             >
               <Text style={styles.buttonText}>Voltar</Text>
-            </TouchableOpacity>
+            </Pressable>
           </>
         );
 

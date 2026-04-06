@@ -11,12 +11,12 @@ import {
   Alert,
   Dimensions,
   FlatList,
+  Pressable,
   SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import Toast from "react-native-toast-message";
@@ -328,6 +328,13 @@ export default function AgendarConsultaScreen() {
     });
   }, [selectedDate, selectedTime, slotsData.slots]);
 
+  // Se só tem um profissional disponível, já seleciona automaticamente
+  useEffect(() => {
+    if (professionalsForSlot.length === 1) {
+      setSelectedSlot(professionalsForSlot[0]);
+    }
+  }, [professionalsForSlot]);
+
   const handleSelectProfessional = (slot: Slot) => {
     setSelectedSlot(slot);
   };
@@ -462,9 +469,9 @@ export default function AgendarConsultaScreen() {
 
       {/* Header */}
       <View style={styles.topBar}>
-        <TouchableOpacity style={styles.backButton} onPress={goBack} activeOpacity={0.7}>
+        <Pressable style={styles.backButton} onPress={goBack}>
           <Ionicons name="chevron-back" size={28} color={themeColors.text} />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={[styles.pageTitle, { color: themeColors.text }]} numberOfLines={1}>
           {currentStep === "specialty" && "Selecione a especialidade"}
           {currentStep === "date" && (selectedSpecialty?.speciality_name || "Agendar Consulta")}
@@ -507,22 +514,22 @@ export default function AgendarConsultaScreen() {
       <View style={{ flex: 1 }}>
         {/* Category Tabs */}
         <View style={styles.tabContainer}>
-          <TouchableOpacity
+          <Pressable
             style={[styles.tab, activeCategory === "medical" && styles.tabActive]}
             onPress={() => setActiveCategory("medical")}
           >
             <Text style={[styles.tabText, activeCategory === "medical" && styles.tabTextActive]}>
               Especialidades Med.
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             style={[styles.tab, activeCategory === "wellness" && styles.tabActive]}
             onPress={() => setActiveCategory("wellness")}
           >
             <Text style={[styles.tabText, activeCategory === "wellness" && styles.tabTextActive]}>
               Bem-estar
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {/* Specialties List */}
@@ -531,10 +538,10 @@ export default function AgendarConsultaScreen() {
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContainer}
           renderItem={({ item }) => (
-            <TouchableOpacity
+            <Pressable
               style={styles.specialtyItem}
               onPress={() => handleSelectSpecialty(item)}
-              activeOpacity={0.7}
+  
             >
               <View style={styles.specialtyIconContainer}>
                 <Ionicons
@@ -545,7 +552,7 @@ export default function AgendarConsultaScreen() {
               </View>
               <Text style={styles.specialtyName}>{item.speciality_name}</Text>
               <Ionicons name="chevron-forward" size={20} color="#999" />
-            </TouchableOpacity>
+            </Pressable>
           )}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
@@ -568,11 +575,11 @@ export default function AgendarConsultaScreen() {
           <Text style={styles.sectionTitle}>PROFISSIONAIS DISPONÍVEIS</Text>
 
           {uniqueProfessionals.map((slot, index) => (
-            <TouchableOpacity
+            <Pressable
               key={`${slot.professional_name}-${index}`}
               style={styles.professionalCard}
               onPress={() => handleSelectProfessionalFirst(slot.professional_name)}
-              activeOpacity={0.7}
+  
             >
               <View style={styles.professionalAvatar}>
                 <Ionicons name="person-circle-outline" size={48} color="#032FEA" />
@@ -587,7 +594,7 @@ export default function AgendarConsultaScreen() {
                 </View>
               </View>
               <Ionicons name="chevron-forward" size={20} color="#999" />
-            </TouchableOpacity>
+            </Pressable>
           ))}
 
           {uniqueProfessionals.length === 0 && (
@@ -643,9 +650,9 @@ export default function AgendarConsultaScreen() {
           <View style={styles.selectedDateBanner}>
             <Ionicons name="person" size={18} color="#032FEA" />
             <Text style={styles.selectedDateText}>{selectedProfessionalName}</Text>
-            <TouchableOpacity onPress={() => { setSelectedProfessionalName(null); setSelectedDate(null); setSelectedTime(null); }}>
+            <Pressable onPress={() => { setSelectedProfessionalName(null); setSelectedDate(null); setSelectedTime(null); }}>
               <Text style={styles.changeDateLink}>Alterar</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         )}
 
@@ -654,15 +661,15 @@ export default function AgendarConsultaScreen() {
 
         {/* Month Navigation */}
         <View style={styles.monthNav}>
-          <TouchableOpacity onPress={goToPrevMonth} style={styles.monthNavButton}>
+          <Pressable onPress={goToPrevMonth} style={styles.monthNavButton}>
             <Ionicons name="chevron-back" size={22} color="#fff" />
-          </TouchableOpacity>
+          </Pressable>
           <Text style={styles.monthLabel}>
             {MONTH_NAMES[calendarMonth]} {calendarYear}
           </Text>
-          <TouchableOpacity onPress={goToNextMonth} style={styles.monthNavButton}>
+          <Pressable onPress={goToNextMonth} style={styles.monthNavButton}>
             <Ionicons name="chevron-forward" size={22} color="#fff" />
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {/* Day Names Header */}
@@ -695,30 +702,30 @@ export default function AgendarConsultaScreen() {
             ];
 
             return (
-              <TouchableOpacity
+              <Pressable
                 key={item.dateStr}
                 style={cellStyle}
                 disabled={!item.isAvailable}
                 onPress={() => handleSelectDate(item.dateStr)}
-                activeOpacity={0.7}
+    
               >
                 <Text style={textStyle}>{item.day}</Text>
-              </TouchableOpacity>
+              </Pressable>
             );
           })}
         </View>
 
         {/* Next Button */}
         <View style={styles.bottomAction}>
-          <TouchableOpacity
+          <Pressable
             style={[styles.nextButton, !selectedDate && styles.nextButtonDisabled]}
             disabled={!selectedDate}
             onPress={() => setCurrentStep("time")}
-            activeOpacity={0.8}
+
           >
             <Text style={styles.nextButtonText}>Próximo</Text>
             <Ionicons name="arrow-forward" size={20} color="#fff" />
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </ScrollView>
     );
@@ -727,7 +734,7 @@ export default function AgendarConsultaScreen() {
   function renderModeToggle() {
     return (
       <View style={styles.modeToggleContainer}>
-        <TouchableOpacity
+        <Pressable
           style={[styles.modeToggleButton, scheduleMode === "byTime" && styles.modeToggleActive]}
           onPress={() => handleSwitchMode("byTime")}
         >
@@ -735,8 +742,8 @@ export default function AgendarConsultaScreen() {
           <Text style={[styles.modeToggleText, scheduleMode === "byTime" && styles.modeToggleTextActive]}>
             Por horário
           </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
+        </Pressable>
+        <Pressable
           style={[styles.modeToggleButton, scheduleMode === "byProfessional" && styles.modeToggleActive]}
           onPress={() => handleSwitchMode("byProfessional")}
         >
@@ -744,7 +751,7 @@ export default function AgendarConsultaScreen() {
           <Text style={[styles.modeToggleText, scheduleMode === "byProfessional" && styles.modeToggleTextActive]}>
             Por profissional
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     );
   }
@@ -773,9 +780,9 @@ export default function AgendarConsultaScreen() {
           <Text style={styles.selectedDateText}>
             {selectedDate ? formatDateBR(selectedDate) : ""}
           </Text>
-          <TouchableOpacity onPress={() => setCurrentStep("date")}>
+          <Pressable onPress={() => setCurrentStep("date")}>
             <Text style={styles.changeDateLink}>Alterar</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {/* Professional banner in byProfessional mode */}
@@ -793,16 +800,16 @@ export default function AgendarConsultaScreen() {
           {timesForSelectedDate.map((time) => {
             const isSelected = selectedTime === time;
             return (
-              <TouchableOpacity
+              <Pressable
                 key={time}
                 style={[styles.timeChip, isSelected && styles.timeChipSelected]}
                 onPress={() => handleTimeAndMaybeProceed(time)}
-                activeOpacity={0.7}
+    
               >
                 <Text style={[styles.timeChipText, isSelected && styles.timeChipTextSelected]}>
                   {time}
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             );
           })}
         </View>
@@ -816,28 +823,28 @@ export default function AgendarConsultaScreen() {
         {/* Next / Confirm Button */}
         <View style={styles.bottomAction}>
           {scheduleMode === "byProfessional" && selectedProfessionalName ? (
-            <TouchableOpacity
+            <Pressable
               style={[styles.confirmButton, (!selectedTime || !selectedSlot) && styles.confirmButtonDisabled]}
               disabled={!selectedTime || !selectedSlot || loading}
               onPress={handleConfirmAppointment}
-              activeOpacity={0.8}
+  
             >
               {loading ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
                 <Text style={styles.confirmButtonText}>Confirmar Agendamento</Text>
               )}
-            </TouchableOpacity>
+            </Pressable>
           ) : (
-            <TouchableOpacity
+            <Pressable
               style={[styles.nextButton, !selectedTime && styles.nextButtonDisabled]}
               disabled={!selectedTime}
               onPress={() => setCurrentStep("professional")}
-              activeOpacity={0.8}
+  
             >
               <Text style={styles.nextButtonText}>Próximo</Text>
               <Ionicons name="arrow-forward" size={20} color="#fff" />
-            </TouchableOpacity>
+            </Pressable>
           )}
         </View>
       </ScrollView>
@@ -869,11 +876,11 @@ export default function AgendarConsultaScreen() {
             && selectedSlot?.professional_name === slot.professional_name;
 
           return (
-            <TouchableOpacity
+            <Pressable
               key={`${slot.user_schedule_id}-${index}`}
               style={[styles.professionalCard, isSelected && styles.professionalCardSelected]}
               onPress={() => handleSelectProfessional(slot)}
-              activeOpacity={0.7}
+  
             >
               <View style={styles.professionalAvatar}>
                 <Ionicons name="person-circle-outline" size={48} color="#032FEA" />
@@ -890,7 +897,7 @@ export default function AgendarConsultaScreen() {
               {isSelected && (
                 <Ionicons name="checkmark-circle" size={28} color="#00E276" />
               )}
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
 
@@ -902,18 +909,18 @@ export default function AgendarConsultaScreen() {
 
         {/* Confirm Button */}
         <View style={styles.bottomAction}>
-          <TouchableOpacity
+          <Pressable
             style={[styles.confirmButton, !selectedSlot && styles.confirmButtonDisabled]}
             disabled={!selectedSlot || loading}
             onPress={handleConfirmAppointment}
-            activeOpacity={0.8}
+
           >
             {loading ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
               <Text style={styles.confirmButtonText}>Confirmar Agendamento</Text>
             )}
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </ScrollView>
     );

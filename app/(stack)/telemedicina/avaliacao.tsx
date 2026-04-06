@@ -5,7 +5,7 @@ import { useState } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
+  Pressable,
   TextInput,
   StyleSheet,
   ActivityIndicator,
@@ -93,7 +93,7 @@ export default function AvaliacaoScreen() {
         {/* Rating selector 0-10 */}
         <View style={styles.ratingRow}>
           {Array.from({ length: 11 }, (_, i) => (
-            <TouchableOpacity
+            <Pressable
               key={i}
               style={[
                 styles.ratingButton,
@@ -103,7 +103,7 @@ export default function AvaliacaoScreen() {
                 },
               ]}
               onPress={() => setRating(i)}
-              activeOpacity={0.7}
+
             >
               <Text
                 style={[
@@ -113,7 +113,7 @@ export default function AvaliacaoScreen() {
               >
                 {i}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </View>
 
@@ -135,30 +135,29 @@ export default function AvaliacaoScreen() {
         />
 
         {/* Submit button */}
-        <TouchableOpacity
+        <Pressable
           style={[
             styles.submitButton,
             rating === null && styles.submitButtonDisabled,
           ]}
           onPress={handleSubmit}
           disabled={submitting || rating === null}
-          activeOpacity={0.8}
+
         >
           {submitting ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <Text style={styles.submitButtonText}>Enviar Avaliacao</Text>
           )}
-        </TouchableOpacity>
+        </Pressable>
 
         {/* Skip */}
-        <TouchableOpacity
+        <Pressable
           style={styles.skipButton}
           onPress={handleSkip}
-          activeOpacity={0.7}
         >
           <Text style={styles.skipButtonText}>Pular</Text>
-        </TouchableOpacity>
+        </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
   );

@@ -8,7 +8,7 @@ import {
   StatusBar,
   ActivityIndicator,
   Text,
-  TouchableOpacity,
+  Pressable,
   Modal,
   FlatList,
   TextInput,
@@ -20,6 +20,7 @@ import { Image } from "react-native";
 import { WebView } from "react-native-webview";
 import Toast from "react-native-toast-message";
 import * as ImagePicker from "expo-image-picker";
+import Pusher from "pusher-js/react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import telemedicinaService from "@/api/telemedicina";
 import { logCrash } from "@/api/firebase";
@@ -33,6 +34,10 @@ export default function VideoCallScreen() {
   const sessionId = params.sessionId as string;
   const token = params.token as string;
   const appointmentId = parseInt(params.appointmentId as string);
+  const pusherKey = params.pusherKey as string;
+  const pusherCluster = params.pusherCluster as string;
+  const pusherChannel = params.pusherChannel as string;
+  const pusherRef = useRef<Pusher | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [chatVisible, setChatVisible] = useState(false);
@@ -46,6 +51,7 @@ export default function VideoCallScreen() {
   );
   const webViewRef = useRef<WebView>(null);
   const chatPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const finishingRef = useRef(false);
 
   // Solicitar permissões nativas no Android
   useEffect(() => {
@@ -89,6 +95,45 @@ export default function VideoCallScreen() {
       appointmentId,
     });
   }, []);
+
+  // Pusher — escuta finish_stream e outros eventos em tempo real
+  useEffect(() => {
+    if (!pusherKey || !pusherChannel) {
+      console.warn("[VIDEO_CALL] Pusher config ausente, sem websocket");
+      return;
+    }
+
+    console.log(`[VIDEO_CALL] Conectando Pusher: key=${pusherKey}, cluster=${pusherCluster}, channel=${pusherChannel}`);
+
+    const pusher = new Pusher(pusherKey, { cluster: pusherCluster || "mt1" });
+    pusherRef.current = pusher;
+
+    const channel = pusher.subscribe(pusherChannel);
+
+    channel.bind("pusher:subscription_succeeded", () => {
+      console.log(`[VIDEO_CALL] [PUSHER] Inscrito no canal: ${pusherChannel}`);
+    });
+
+    // Log de todos os eventos para debug
+    channel.bind_global((eventName: string, data: any) => {
+      console.log(`[VIDEO_CALL] [PUSHER] Evento: "${eventName}"`, JSON.stringify(data));
+    });
+
+    // Medico encerrou a consulta
+    channel.bind("finish_stream", async (data: any) => {
+      console.log("[VIDEO_CALL] [PUSHER] >>> FINISH_STREAM recebido:", data);
+      Toast.show({ type: "info", text1: "Consulta encerrada pelo médico" });
+      navigateToRating();
+    });
+
+    return () => {
+      console.log("[VIDEO_CALL] [PUSHER] Desconectando");
+      channel.unbind_all();
+      pusher.unsubscribe(pusherChannel);
+      pusher.disconnect();
+      pusherRef.current = null;
+    };
+  }, [pusherKey, pusherCluster, pusherChannel]);
 
   // Polling de mensagens do chat
   const fetchChatMessages = useCallback(async () => {
@@ -225,8 +270,16 @@ export default function VideoCallScreen() {
     }
   };
 
-  const navigateToRating = async () => {
-    await telemedicinaService.finishAppointment(appointmentId);
+  const navigateToRating = () => {
+    if (finishingRef.current) {
+      console.log("[VIDEO_CALL] navigateToRating já chamado, ignorando");
+      return;
+    }
+    finishingRef.current = true;
+    console.log("[VIDEO_CALL] Finalizando e navegando para avaliação");
+    telemedicinaService.finishAppointment(appointmentId).catch((e) => {
+      console.warn("[VIDEO_CALL] Erro ao finalizar (pode já estar finalizado):", e);
+    });
     router.replace({
       pathname: "/(stack)/telemedicina/avaliacao" as any,
       params: { appointmentId: appointmentId.toString() },
@@ -442,7 +495,7 @@ export default function VideoCallScreen() {
           break;
         case "disconnected":
           Toast.show({ type: "info", text1: "Chamada encerrada" });
-          setTimeout(() => navigateToRating(), 1500);
+          navigateToRating();
           break;
         case "log":
           console.log("[VIDEO_CALL] [WebView]:", message.data);
@@ -509,10 +562,9 @@ export default function VideoCallScreen() {
 
       {/* Botao do chat flutuante */}
       {!loading && (
-        <TouchableOpacity
+        <Pressable
           style={styles.chatFloatingButton}
           onPress={() => setChatVisible(true)}
-          activeOpacity={0.8}
         >
           <Text style={styles.chatFloatingIcon}>💬</Text>
           {chatMessages.length > 0 && (
@@ -520,7 +572,7 @@ export default function VideoCallScreen() {
               <Text style={styles.chatBadgeText}>{chatMessages.length}</Text>
             </View>
           )}
-        </TouchableOpacity>
+        </Pressable>
       )}
 
       {/* Modal de chat */}
@@ -534,17 +586,16 @@ export default function VideoCallScreen() {
           style={styles.chatModalContainer}
           behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-          <TouchableOpacity
+          <Pressable
             style={styles.chatModalOverlay}
-            activeOpacity={1}
             onPress={() => setChatVisible(false)}
           />
           <View style={styles.chatPanel}>
             <View style={styles.chatHeader}>
               <Text style={styles.chatHeaderTitle}>Chat</Text>
-              <TouchableOpacity onPress={() => setChatVisible(false)}>
+              <Pressable onPress={() => setChatVisible(false)}>
                 <Text style={styles.chatCloseButton}>✕</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
 
             <FlatList
@@ -604,20 +655,20 @@ export default function VideoCallScreen() {
                 { paddingBottom: Math.max(insets.bottom, 12) + 8 },
               ]}
             >
-              <TouchableOpacity
+              <Pressable
                 style={[styles.chatAttachButton, (sendingChat || uploadingImage) && { opacity: 0.4 }]}
                 onPress={handlePickAttachment}
                 disabled={sendingChat || uploadingImage}
               >
                 <Text style={styles.chatAttachIcon}>📎</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
+              </Pressable>
+              <Pressable
                 style={[styles.chatAttachButton, (sendingChat || uploadingImage) && { opacity: 0.4 }]}
                 onPress={handleTakePhoto}
                 disabled={sendingChat || uploadingImage}
               >
                 <Text style={styles.chatAttachIcon}>📷</Text>
-              </TouchableOpacity>
+              </Pressable>
               <TextInput
                 style={styles.chatInput}
                 value={chatText}
@@ -628,7 +679,7 @@ export default function VideoCallScreen() {
                 maxLength={500}
                 editable={!uploadingImage}
               />
-              <TouchableOpacity
+              <Pressable
                 style={[
                   styles.chatSendButton,
                   (!chatText.trim() || sendingChat || uploadingImage) &&
@@ -642,7 +693,7 @@ export default function VideoCallScreen() {
                 ) : (
                   <Text style={styles.chatSendIcon}>➤</Text>
                 )}
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
         </KeyboardAvoidingView>
