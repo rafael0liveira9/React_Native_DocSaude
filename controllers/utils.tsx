@@ -13,7 +13,7 @@ export const menuItens = [
   {
     title: "⁠Pronto Atendimento Online 24h",
     icon: EmergenciaIcon,
-    url: "/(stack)/telemedicina",
+    url: "/(stack)/telemedicina-web",
   },
   {
     title: "Concierge em Saúde",

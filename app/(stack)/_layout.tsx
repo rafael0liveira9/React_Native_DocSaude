@@ -25,6 +25,12 @@ function StackLayoutContent() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="telemedicina-web/index"
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }

@@ -545,6 +545,12 @@ class TelemedicinaService {
       throw error;
     }
   }
+
+  async getSsoUrl(assinanteId: number): Promise<{ url: string; ssoReady: boolean }> {
+    const response = await api.get(`/telemedicina/sso-url?assinante_id=${assinanteId}`);
+    const data = response.data?.data || {};
+    return { url: data.url, ssoReady: !!data.sso_ready };
+  }
 }
 
 export default new TelemedicinaService();
