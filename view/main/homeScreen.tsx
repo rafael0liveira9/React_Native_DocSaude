@@ -1,6 +1,7 @@
 import { GetMyData } from "@/api/auth";
 import { registerForPushNotificationsAsync } from "@/api/firebase";
 import { registerDeviceToken } from "@/api/notifications";
+import telemedicinaService from "@/api/telemedicina";
 import { LogoutModal } from "@/components/fragments/modalLogout";
 import Header from "@/components/header";
 import HomeMain from "@/components/homeMain";
@@ -153,6 +154,9 @@ export default function HomeScreen() {
       case "callWhatsapp":
         handleCallWhatsapp();
         break;
+      case "openTelemedicina":
+        handleOpenTelemedicina();
+        break;
 
       default:
         break;
@@ -175,6 +179,27 @@ export default function HomeScreen() {
     )}`;
 
     return Linking.openURL(url);
+  }
+
+  async function handleOpenTelemedicina() {
+    try {
+      const userId = await SecureStore.getItemAsync("user-id");
+      if (!userId) {
+        console.warn("[TELEMEDICINA] user-id ausente");
+        return;
+      }
+      const idNum = parseInt(userId);
+      try {
+        await telemedicinaService.validate(idNum);
+      } catch (e) {
+        console.warn("[TELEMEDICINA] validate falhou, seguindo:", e);
+      }
+      const { url } = await telemedicinaService.getSsoUrl(idNum);
+      if (!url) return;
+      await WebBrowser.openBrowserAsync(url);
+    } catch (error) {
+      console.error("[TELEMEDICINA] Erro ao abrir:", error);
+    }
   }
 
   async function handleOpenManual() {

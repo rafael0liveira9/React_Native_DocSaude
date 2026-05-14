@@ -112,11 +112,15 @@ export default function TelemedicinaWebScreen() {
           ref={webRef}
           source={{ uri: url }}
           style={{ flex: 1, backgroundColor: themeColors.background }}
-          userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
           javaScriptEnabled
           domStorageEnabled
           sharedCookiesEnabled
           thirdPartyCookiesEnabled
+          incognito={false}
+          cacheEnabled
+          cacheMode="LOAD_DEFAULT"
+          mixedContentMode="always"
+          setSupportMultipleWindows={false}
           allowsInlineMediaPlayback
           mediaPlaybackRequiresUserAction={false}
           originWhitelist={["*"]}

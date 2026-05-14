@@ -13,7 +13,9 @@ export const menuItens = [
   {
     title: "Saúde Online - Telemedicina",
     icon: EmergenciaIcon,
-    url: "/(stack)/telemedicina-web",
+    // Fallback nativo enquanto SSO da Teladoc não funciona.
+    // Quando voltar, trocar para: url: "/(stack)/telemedicina-web"
+    url: "/(stack)/telemedicina",
     badge: "24h",
   },
   {
