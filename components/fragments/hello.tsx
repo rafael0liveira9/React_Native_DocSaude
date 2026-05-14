@@ -1,10 +1,13 @@
 import { Colors } from "@/constants/Colors";
+import { toTitleCase } from "@/controllers/utils";
 import { globalStyles } from "@/styles/global";
 import { styles } from "@/styles/home";
 import { Text, View } from "react-native";
 
 export default function Hello({ user }: any) {
   const themeColors = Colors["dark"];
+  const rawFirst = user?.name?.trim().split(/\s+/)[0] ?? "";
+  const firstName = toTitleCase(rawFirst);
 
   return (
     <View
@@ -14,15 +17,15 @@ export default function Hello({ user }: any) {
         {
           justifyContent: "flex-start",
           paddingHorizontal: "7%",
-          paddingTop: 20,
-          paddingBottom: 10,
+          paddingTop: 10,
+          paddingBottom: 16,
         },
       ]}
     >
       <Text
         style={[styles.helloTitle, { color: themeColors.backgroundSecondary }]}
       >
-        Olá, {user?.name}!
+        Olá, {firstName}!
       </Text>
     </View>
   );

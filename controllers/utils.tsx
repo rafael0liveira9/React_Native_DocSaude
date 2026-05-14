@@ -11,9 +11,16 @@ export const emailRegex =
   /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\.[a-zA-Z]{2,})?$/;
 export const menuItens = [
   {
-    title: "⁠Pronto Atendimento Online 24h",
+    title: "Saúde Online - Telemedicina",
     icon: EmergenciaIcon,
     url: "/(stack)/telemedicina-web",
+    badge: "24h",
+  },
+  {
+    title: "Equipe de Saúde",
+    icon: AssistenciaIcon,
+    action: "callSupport",
+    badge: "24h",
   },
   {
     title: "Concierge em Saúde",
@@ -21,17 +28,12 @@ export const menuItens = [
     action: "callWhatsapp",
   },
   {
-    title: "Suporte Técnico ao Pronto Atendimento 24h",
-    icon: AssistenciaIcon,
-    action: "callSupport",
-  },
-  {
-    title: "Rede Credenciada Presencial",
+    title: "Rede Credenciada",
     icon: RedeIcon,
     url: "/(stack)/accredited",
   },
   {
-    title: "⁠Farmácias Conveniadas",
+    title: "Farmácias Conveniadas",
     icon: FarmaciaIcon,
     url: "",
   },
@@ -65,6 +67,21 @@ export function calculateAge(dateString: string): string {
   }
 
   return `${age} anos`;
+}
+
+export function toTitleCase(value?: string): string {
+  if (!value) return "";
+  const lowers = new Set(["de", "da", "do", "das", "dos", "e"]);
+  return value
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word, i) =>
+      i > 0 && lowers.has(word)
+        ? word
+        : word.charAt(0).toUpperCase() + word.slice(1)
+    )
+    .join(" ");
 }
 
 export function cpfFormat(value: string) {

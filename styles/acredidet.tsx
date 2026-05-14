@@ -8,8 +8,8 @@ export const styles = StyleSheet.create({
     flex: 1,
     borderTopRightRadius: 35,
     borderTopLeftRadius: 35,
-    marginTop: 30,
-    paddingVertical: 30,
-    overflowY: "auto",
+    marginTop: 6,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
 });

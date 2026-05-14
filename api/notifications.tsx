@@ -1,6 +1,5 @@
 import * as SecureStore from "expo-secure-store";
-
-const API_URL = "https://yk171d97y4.execute-api.us-east-1.amazonaws.com/prd";
+import { API_URL } from "./config";
 
 /**
  * Registra ou atualiza o token FCM do dispositivo no backend

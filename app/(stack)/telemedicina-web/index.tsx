@@ -50,7 +50,19 @@ export default function TelemedicinaWebScreen() {
           return;
         }
 
-        const { url: ssoUrl } = await telemedicinaService.getSsoUrl(parseInt(userId));
+        const idNum = parseInt(userId);
+
+        try {
+          await telemedicinaService.validate(idNum);
+          console.log("[TELEMEDICINA_WEB] Token Teladoc validado");
+        } catch (validateErr) {
+          console.warn(
+            "[TELEMEDICINA_WEB] Falha em /validate, seguindo para SSO:",
+            validateErr
+          );
+        }
+
+        const { url: ssoUrl } = await telemedicinaService.getSsoUrl(idNum);
         console.log("[TELEMEDICINA_WEB] URL recebida:", ssoUrl);
         setUrl(ssoUrl);
       } catch (err: any) {
@@ -100,6 +112,7 @@ export default function TelemedicinaWebScreen() {
           ref={webRef}
           source={{ uri: url }}
           style={{ flex: 1, backgroundColor: themeColors.background }}
+          userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
           javaScriptEnabled
           domStorageEnabled
           sharedCookiesEnabled

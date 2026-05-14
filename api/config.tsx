@@ -1,7 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 
-// URL da API
-const API_URL = 'https://yk171d97y4.execute-api.us-east-1.amazonaws.com/prd';
+// URL da API (centralizada — importar daqui em todos os arquivos)
+export const API_URL = 'https://yk171d97y4.execute-api.us-east-1.amazonaws.com/prd';
 
 /**
  * Cliente HTTP baseado em fetch nativo.

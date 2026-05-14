@@ -7,7 +7,7 @@ import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useState } from "react";
-import { Image, TouchableOpacity, View } from "react-native";
+import { Image, Text, TouchableOpacity, View } from "react-native";
 import { LogoutModal } from "./fragments/modalLogout";
 
 export default function Header({ notify }: any) {
@@ -97,12 +97,25 @@ export default function Header({ notify }: any) {
             color={themeColors.backgroundSecondary}
           />
         </TouchableOpacity> */}
-        <TouchableOpacity onPress={() => setIsLogoutModalOpen(true)}>
+        <TouchableOpacity
+          onPress={() => setIsLogoutModalOpen(true)}
+          style={{ alignItems: "center", gap: 2 }}
+        >
           <FontAwesome5
-            name="user"
-            size={30}
+            name="user-circle"
+            size={28}
             color={themeColors.backgroundSecondary}
           />
+          <Text
+            style={{
+              color: themeColors.backgroundSecondary,
+              fontSize: 11,
+              fontFamily: Fonts.semiBold,
+              fontWeight: "600",
+            }}
+          >
+            Perfil
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

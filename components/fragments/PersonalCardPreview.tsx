@@ -1,11 +1,15 @@
 import { Colors } from "@/constants/Colors";
 import { Fonts } from "@/constants/Fonts";
-import { formatDate } from "@/controllers/utils";
-import { globalStyles } from "@/styles/global";
-import { styles } from "@/styles/home";
-import AntDesign from "@expo/vector-icons/AntDesign";
+import { formatDate, toTitleCase } from "@/controllers/utils";
 import React, { useRef, useState } from "react";
-import { Dimensions, FlatList, Pressable, Text, View } from "react-native";
+import {
+  Dimensions,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 interface PersonalCardCarouselProps {
   cards: any[];
@@ -13,8 +17,27 @@ interface PersonalCardCarouselProps {
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const CARD_WIDTH = SCREEN_WIDTH * 0.85;
-const GAP = 20;
+const CARD_WIDTH = SCREEN_WIDTH * 0.88;
+const GAP = 16;
+
+function getInitials(name?: string): string {
+  if (!name) return "";
+  const ignored = new Set(["de", "da", "do", "das", "dos", "e"]);
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter((p) => p && !ignored.has(p.toLowerCase()));
+  if (parts.length === 0) return "";
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (
+    parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
+  ).toUpperCase();
+}
+
+function formatCardNumber(num?: string): string {
+  if (!num) return "";
+  return String(num).replace(/(.{4})/g, "$1 ").trim();
+}
 
 export default function PersonalCardCarousel({
   cards,
@@ -25,125 +48,73 @@ export default function PersonalCardCarousel({
   const flatListRef = useRef<FlatList>(null);
 
   const renderCard = ({ item }: { item: any }) => {
-    const formattedNumber = item?.number.match(/.{1,4}/g)?.join(" ") ?? "";
+    const isPJ = item?.type === "PJ" || !!item?.companyName;
+    const planLabel = isPJ ? item.companyName : item.typeName;
+    const validadeLabel = isPJ ? "sob consulta" : formatDate(item.validAt);
 
     return (
       <View
         style={[
-          globalStyles.flexr,
-          styles.personalCardPreview,
+          styles.card,
           {
-            backgroundColor: themeColors.grey,
             width: CARD_WIDTH,
+            backgroundColor: themeColors.backgroundSecondary,
           },
         ]}
       >
-        <View
-          style={[
-            styles.cardFirst,
-            globalStyles.flexc,
-            { justifyContent: "space-around", alignItems: "flex-start" },
-          ]}
-        >
-          <View>
-            <Text
-              style={[
-                styles.cardPreviewText,
-                { fontSize: 16, fontWeight: "700", fontFamily: Fonts.bold },
-              ]}
-            >
-              {item.name}
-            </Text>
-            {item.companyName && (
-              <Text
-                style={[
-                  styles.cardPreviewText,
-                  {
-                    fontSize: 12,
-                    fontWeight: "600",
-                    fontFamily: Fonts.semiBold,
-                    opacity: 0.8,
-                    marginTop: 2,
-                  },
-                ]}
-              >
-                {item.companyName}
-              </Text>
-            )}
-          </View>
-          <Text
-            style={[
-              styles.cardPreviewText,
-              { fontSize: 18, fontWeight: "700", fontFamily: Fonts.bold, letterSpacing: 1 },
-            ]}
-          >
-            {formattedNumber}
-          </Text>
+        <View style={styles.cardTop}>
           <View
-            style={[
-              globalStyles.flexc,
-              {
-                justifyContent: "space-around",
-                alignItems: "flex-start",
-                gap: 5,
-              },
-            ]}
+            style={[styles.avatar, { backgroundColor: themeColors.tint }]}
           >
-            <Text style={{ fontSize: 10, fontWeight: "600", fontFamily: Fonts.semiBold, opacity: 0.7 }}>
-              VALIDADE
-            </Text>
+            <Text style={styles.avatarText}>{getInitials(item.name)}</Text>
+          </View>
+          <View style={styles.cardTopInfo}>
             <Text
-              style={[
-                styles.cardPreviewText,
-                { fontSize: 14, fontWeight: "600", fontFamily: Fonts.semiBold },
-              ]}
+              style={[styles.cardName, { color: themeColors.background }]}
+              numberOfLines={1}
             >
-              {formatDate(item.validAt)}
+              {toTitleCase(item.name)}
+            </Text>
+            {planLabel ? (
+              <Text
+                style={[styles.cardPlan, { color: themeColors.background }]}
+                numberOfLines={1}
+              >
+                Plano: <Text style={{ fontWeight: "700" }}>{planLabel}</Text>
+              </Text>
+            ) : null}
+          </View>
+        </View>
+
+        <View style={styles.cardRow}>
+          <View style={styles.cardRowItem}>
+            <Text style={styles.cardLabel}>Carteirinha Nº</Text>
+            <Text
+              style={[styles.cardValue, { color: themeColors.background }]}
+            >
+              {formatCardNumber(item.number)}
+            </Text>
+          </View>
+          <View style={styles.cardRowItem}>
+            <Text style={styles.cardLabel}>Validade</Text>
+            <Text
+              style={[styles.cardValue, { color: themeColors.background }]}
+            >
+              {validadeLabel}
             </Text>
           </View>
         </View>
 
-        <View
-          style={[
-            styles.cardSecond,
-            globalStyles.flexc,
-            { backgroundColor: themeColors.greyLight },
-          ]}
+        <View style={styles.divider} />
+
+        <Pressable
+          onPress={() => openCard(item)}
+          style={[styles.cta, { backgroundColor: themeColors.tint }]}
         >
-          <Pressable
-            onPress={() => {
-              openCard(item);
-            }}
-            style={[
-              styles.previewBtnBox,
-              globalStyles.flexc,
-              globalStyles.wfull,
-              { gap: 10 },
-            ]}
-          >
-            <View
-              style={[
-                styles.previewBtn,
-                globalStyles.flexc,
-                { backgroundColor: themeColors.tint },
-              ]}
-            >
-              <AntDesign name="eye" size={24} color={themeColors.background} />
-            </View>
-            <Text
-              style={{
-                color: themeColors.background,
-                fontWeight: "600",
-                fontFamily: Fonts.semiBold,
-                fontSize: 12,
-                textAlign: "center",
-                lineHeight: 14,
-              }}
-            >
-              Ver dados do cartão
-            </Text>
-          </Pressable>
-        </View>
+          <Text style={[styles.ctaText, { color: themeColors.background }]}>
+            Carteirinha Digital
+          </Text>
+        </Pressable>
       </View>
     );
   };
@@ -154,8 +125,16 @@ export default function PersonalCardCarousel({
     setCurrentIndex(Math.max(0, Math.min(index, cards.length - 1)));
   };
 
+  if (cards.length === 1) {
+    return (
+      <View style={{ alignItems: "center" }}>
+        {renderCard({ item: cards[0] })}
+      </View>
+    );
+  }
+
   return (
-    <View style={{ height: 240 }}>
+    <View>
       <FlatList
         ref={flatListRef}
         data={cards}
@@ -170,33 +149,119 @@ export default function PersonalCardCarousel({
         scrollEventThrottle={16}
         contentContainerStyle={{
           gap: GAP,
-          paddingBottom: 0,
+          paddingHorizontal: (SCREEN_WIDTH - CARD_WIDTH) / 2,
           alignItems: "center",
         }}
       />
 
-      {/* Dots */}
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "center",
-          marginTop: 12,
-          gap: 8,
-        }}
-      >
-        {cards.map((_, i) => (
-          <View
-            key={i}
-            style={{
-              width: i === currentIndex ? 12 : 8,
-              height: i === currentIndex ? 12 : 8,
-              borderRadius: 6,
-              backgroundColor:
-                i === currentIndex ? themeColors.tint : themeColors.greyMedium,
-            }}
-          />
-        ))}
-      </View>
+      {cards.length > 1 ? (
+        <View style={styles.dots}>
+          {cards.map((_, i) => (
+            <View
+              key={i}
+              style={{
+                width: i === currentIndex ? 18 : 6,
+                height: 6,
+                borderRadius: 3,
+                backgroundColor:
+                  i === currentIndex
+                    ? themeColors.tint
+                    : themeColors.greyMedium,
+              }}
+            />
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  cardTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 14,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatarText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "700",
+    fontFamily: Fonts.bold,
+  },
+  cardTopInfo: {
+    flex: 1,
+  },
+  cardName: {
+    fontSize: 16,
+    fontWeight: "700",
+    fontFamily: Fonts.bold,
+  },
+  cardPlan: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    marginTop: 2,
+    opacity: 0.85,
+  },
+  cardRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 4,
+  },
+  cardRowItem: {
+    flex: 1,
+  },
+  cardLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    fontFamily: Fonts.semiBold,
+    opacity: 0.55,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+  cardValue: {
+    fontSize: 14,
+    fontWeight: "700",
+    fontFamily: Fonts.bold,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#00000015",
+    marginVertical: 14,
+  },
+  cta: {
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ctaText: {
+    fontSize: 14,
+    fontWeight: "700",
+    fontFamily: Fonts.bold,
+  },
+  dots: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 14,
+    gap: 6,
+    alignItems: "center",
+  },
+});

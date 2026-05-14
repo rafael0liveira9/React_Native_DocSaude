@@ -1,386 +1,229 @@
 import { Fonts } from "@/constants/Fonts";
-import { formatDate } from "@/controllers/utils";
-import { globalStyles } from "@/styles/global";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import React from "react";
+import * as FileSystem from "expo-file-system/legacy";
+import React, { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
-  Image,
   Modal,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { WebView } from "react-native-webview";
+
+import { API_URL } from "@/api/config";
+
+const CACHE_DIR = `${FileSystem.documentDirectory}carteirinhas/`;
+
+const INJECTED_JS = `
+  (function() {
+    var meta = document.querySelector('meta[name=viewport]');
+    if (meta) {
+      meta.content = 'width=640, initial-scale=1, maximum-scale=1, user-scalable=no';
+    }
+    var s = document.createElement('style');
+    s.textContent =
+      "html, body { min-height: 0 !important; padding: 12px !important; gap: 16px !important; justify-content: flex-start !important; }" +
+      ".card-container { height: 320px !important; }";
+    document.head.appendChild(s);
+  })();
+  true;
+`;
 
 interface PersonalCardModalProps {
   visible: boolean;
-  user: any;
+  titularId: number | null;
   themeColors: any;
   onClose: () => void;
 }
 
-const { width, height } = Dimensions.get("window");
+function cachePath(id: number | string) {
+  return `${CACHE_DIR}titular-${id}.html`;
+}
+
+async function ensureCacheDir() {
+  const info = await FileSystem.getInfoAsync(CACHE_DIR);
+  if (!info.exists) {
+    await FileSystem.makeDirectoryAsync(CACHE_DIR, { intermediates: true });
+  }
+}
+
+async function readCached(id: number | string): Promise<string | null> {
+  try {
+    const info = await FileSystem.getInfoAsync(cachePath(id));
+    if (!info.exists) return null;
+    return await FileSystem.readAsStringAsync(cachePath(id));
+  } catch {
+    return null;
+  }
+}
+
+async function fetchAndCache(id: number | string): Promise<string | null> {
+  try {
+    const url = `${API_URL}/assinantes/${id}/carteirinha`;
+    console.log("[CARTEIRINHA] fetch:", url);
+    const res = await fetch(url);
+    console.log("[CARTEIRINHA] status:", res.status);
+    if (!res.ok) {
+      console.warn("[CARTEIRINHA] resposta nao OK:", res.status);
+      return null;
+    }
+    const html = await res.text();
+    console.log("[CARTEIRINHA] html len:", html.length);
+    await ensureCacheDir();
+    await FileSystem.writeAsStringAsync(cachePath(id), html);
+    console.log("[CARTEIRINHA] cacheado em", cachePath(id));
+    return html;
+  } catch (e) {
+    console.warn("[CARTEIRINHA] erro fetch:", e);
+    return null;
+  }
+}
 
 export default function PersonalCardModal({
   visible,
-  user,
+  titularId,
   themeColors,
   onClose,
 }: PersonalCardModalProps) {
-  const formattedNumber = user?.number.match(/.{1,4}/g)?.join(" ") ?? "";
+  const [html, setHtml] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const revalidatingRef = useRef(false);
+
+  useEffect(() => {
+    if (!visible || !titularId) {
+      setHtml(null);
+      revalidatingRef.current = false;
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      console.log("[CARTEIRINHA] abrindo modal titularId:", titularId);
+      await ensureCacheDir();
+      const cached = await readCached(titularId);
+      console.log("[CARTEIRINHA] cache existe:", !!cached, "len:", cached?.length ?? 0);
+      if (cancelled) return;
+
+      if (cached) {
+        setHtml(cached);
+        setIsLoading(false);
+        revalidatingRef.current = true;
+        const fresh = await fetchAndCache(titularId);
+        if (cancelled) return;
+        if (fresh && fresh !== cached) {
+          console.log("[CARTEIRINHA] atualizando html (mudou)");
+          setHtml(fresh);
+        }
+        revalidatingRef.current = false;
+      } else {
+        setIsLoading(true);
+        const fresh = await fetchAndCache(titularId);
+        if (cancelled) return;
+        setIsLoading(false);
+        if (fresh) {
+          setHtml(fresh);
+        } else {
+          console.warn("[CARTEIRINHA] fresh vazio, nada para mostrar");
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [visible, titularId]);
 
   return (
     <Modal
       animationType="fade"
-      transparent={true}
+      transparent
       visible={visible}
       onRequestClose={onClose}
     >
-      <View
-        style={[
-          stylesInside.overlay,
-          { backgroundColor: themeColors.background },
-        ]}
-      >
-        <View style={stylesInside.PersonalCardModalContainer}>
-          <View
-            style={[
-              globalStyles.flexr,
-              globalStyles.wfull,
-              stylesInside.personalCardPreview,
-              {
-                backgroundColor: themeColors.grey,
-              },
-            ]}
-          >
-            <View
-              style={[
-                stylesInside.cardFirst,
-                globalStyles.flexc,
-                { justifyContent: "space-around", alignItems: "flex-start" },
-              ]}
-            >
-              {/* Logo TotalDoc */}
-              <View
-                style={{
-                  ...stylesInside.logoContainer,
-                }}
-              >
-                <Image
-                  source={require("@/assets/docsaude/LOGO-TOTALDOC-todo-cinzafundo-transparente.png")}
-                  style={stylesInside.logo}
-                  resizeMode="contain"
-                />
-              </View>
-
-              <View
-                style={[
-                  stylesInside.cardFirstSeparation,
-                  globalStyles.flexc,
-                  { justifyContent: "space-around", alignItems: "flex-start" },
-                ]}
-              >
-                <Text
-                  style={[
-                    stylesInside.cardPreviewText,
-                    { fontSize: 20, fontWeight: "700", fontFamily: Fonts.bold },
-                  ]}
-                >
-                  {user?.name}
-                </Text>
-                <View style={[globalStyles.flexr, { gap: 40 }]}>
-                  <View
-                    style={[
-                      globalStyles.flexc,
-                      {
-                        justifyContent: "space-around",
-                        alignItems: "flex-start",
-                        gap: 5,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 10,
-                        fontWeight: "600",
-                        fontFamily: Fonts.semiBold,
-                        opacity: 0.7,
-                      }}
-                    >
-                      NASCIMENTO
-                    </Text>
-                    <Text style={stylesInside.cardPreviewText}>
-                      {formatDate(user?.birthDate)}
-                    </Text>
-                  </View>
-                  <View
-                    style={[
-                      globalStyles.flexc,
-                      {
-                        justifyContent: "space-around",
-                        alignItems: "flex-start",
-                        gap: 5,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 10,
-                        fontWeight: "600",
-                        fontFamily: Fonts.semiBold,
-                        opacity: 0.7,
-                      }}
-                    >
-                      CPF
-                    </Text>
-                    <Text style={stylesInside.cardPreviewText}>
-                      {user?.document}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-              <View
-                style={[
-                  stylesInside.cardFirstSeparation,
-                  globalStyles.flexc,
-                  {
-                    justifyContent: "space-around",
-                    alignItems: "flex-start",
-                    backgroundColor: themeColors.greyMedium,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    globalStyles.flexc,
-                    {
-                      justifyContent: "space-around",
-                      alignItems: "flex-start",
-                      gap: 5,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      fontWeight: "600",
-                      fontFamily: Fonts.semiBold,
-                      opacity: 0.7,
-                    }}
-                  >
-                    NÚMERO DA CARTEIRINHA
-                  </Text>
-                  <Text style={stylesInside.cardPreviewText}>
-                    {formattedNumber}
-                  </Text>
-                </View>
-                <View style={[globalStyles.flexr, { gap: 40 }]}>
-                  <View
-                    style={[
-                      globalStyles.flexc,
-                      {
-                        justifyContent: "space-around",
-                        alignItems: "flex-start",
-                        gap: 5,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 10,
-                        fontWeight: "600",
-                        fontFamily: Fonts.semiBold,
-                        opacity: 0.7,
-                      }}
-                    >
-                      ATIVAÇÃO
-                    </Text>
-                    <Text style={stylesInside.cardPreviewText}>
-                      {formatDate(user?.activationAt)}
-                    </Text>
-                  </View>
-                  <View
-                    style={[
-                      globalStyles.flexc,
-                      {
-                        justifyContent: "space-around",
-                        alignItems: "flex-start",
-                        gap: 5,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 10,
-                        fontWeight: "600",
-                        fontFamily: Fonts.semiBold,
-                        opacity: 0.7,
-                      }}
-                    >
-                      VALIDADE
-                    </Text>
-                    <Text style={stylesInside.cardPreviewText}>
-                      {formatDate(user?.validAt)}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-              <View
-                style={[
-                  stylesInside.cardFirstSeparation,
-                  globalStyles.flexc,
-                  { justifyContent: "space-around", alignItems: "flex-start" },
-                ]}
-              >
-                <View
-                  style={[
-                    globalStyles.flexc,
-                    {
-                      justifyContent: "space-around",
-                      alignItems: "flex-start",
-                      gap: 5,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      fontWeight: "600",
-                      fontFamily: Fonts.semiBold,
-                      opacity: 0.7,
-                    }}
-                  >
-                    {user?.type === "PF" ? `NOME DO PLANO` : `NOME DA EMPRESA`}
-                  </Text>
-                  <Text style={stylesInside.cardPreviewText}>
-                    {user?.type === "PF" ? user?.typeName : user?.companyName}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            <View
-              style={[
-                stylesInside.cardSecond,
-                globalStyles.flexc,
-                { backgroundColor: themeColors.greyLight },
-              ]}
-            >
-              <Pressable
-                onPress={onClose}
-                style={[
-                  stylesInside.previewBtnBox,
-                  globalStyles.flexc,
-                  globalStyles.wfull,
-                  { gap: 10 },
-                ]}
-              >
-                <View
-                  style={[
-                    stylesInside.previewBtn,
-                    globalStyles.flexc,
-                    { backgroundColor: themeColors.tint },
-                  ]}
-                >
-                  <AntDesign
-                    name="left"
-                    size={34}
-                    color={themeColors.background}
-                  />
-                </View>
-                <Text
-                  style={{
-                    color: themeColors.background,
-                    fontWeight: "600",
-                    fontFamily: Fonts.semiBold,
-                    fontSize: 14,
-                    textAlign: "center",
-                  }}
-                >
-                  Fechar cartão
-                </Text>
-              </Pressable>
-            </View>
+      <View style={[styles.overlay, { backgroundColor: "#0D1633" }]}>
+        {titularId ? (
+          <View style={styles.rotatedContainer}>
+            <WebView
+              originWhitelist={["*"]}
+              source={{
+                uri: `${API_URL}/assinantes/${titularId}/carteirinha`,
+              }}
+              style={styles.webView}
+              javaScriptEnabled
+              domStorageEnabled={false}
+              scrollEnabled
+              showsVerticalScrollIndicator={false}
+              showsHorizontalScrollIndicator={false}
+              injectedJavaScript={INJECTED_JS}
+              onLoadStart={() => console.log("[CARTEIRINHA] WebView loadStart")}
+              onLoadEnd={() => console.log("[CARTEIRINHA] WebView loadEnd")}
+              onError={(e) =>
+                console.warn("[CARTEIRINHA] WebView error:", e.nativeEvent)
+              }
+            />
           </View>
-        </View>
+        ) : (
+          <View style={styles.centerLoading}>
+            <ActivityIndicator size="large" color={themeColors.tint} />
+            {isLoading ? (
+              <Text style={[styles.loadingText, { color: themeColors.text }]}>
+                Carregando carteirinha…
+              </Text>
+            ) : null}
+          </View>
+        )}
+
+        <Pressable
+          onPress={onClose}
+          style={[styles.closeBtn, { backgroundColor: themeColors.tint }]}
+          hitSlop={12}
+        >
+          <AntDesign name="close" size={22} color={themeColors.background} />
+        </Pressable>
       </View>
     </Modal>
   );
 }
 
-const stylesInside = StyleSheet.create({
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
+
+const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "center",
     alignItems: "center",
   },
-  PersonalCardModalContainer: {
-    justifyContent: "flex-start",
-    alignItems: "center",
+  rotatedContainer: {
+    width: SCREEN_H,
+    height: SCREEN_W,
     transform: [{ rotate: "90deg" }],
   },
-  personalCardPreview: {
-    width: width * 1.4,
-    height: width * 0.9,
-    borderRadius: 35,
+  webView: {
+    flex: 1,
+    backgroundColor: "transparent",
+  },
+  centerLoading: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
+    gap: 14,
   },
-  defaultText: {
-    fontSize: 18,
+  loadingText: {
+    fontSize: 14,
     fontFamily: Fonts.regular,
-    textAlign: "center",
   },
-  closeButton: {
-    marginTop: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: "#007AFF",
-    borderRadius: 10,
-  },
-  closeText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontFamily: Fonts.bold,
-  },
-  previewBtnBox: {
-    width: "100%",
-  },
-  previewBtn: {
-    width: 50,
-    height: 50,
-    borderRadius: 100,
-  },
-  cardFirst: {
-    width: "80%",
-    height: "100%",
-  },
-  cardFirstSeparation: {
-    width: "100%",
-    paddingHorizontal: 40,
-    gap: 10,
-    paddingVertical: 10,
-  },
-  cardSecond: {
-    width: "20%",
-    height: "100%",
-    borderTopRightRadius: 35,
-    borderBottomRightRadius: 35,
-  },
-  cardPreviewText: {
-    fontSize: 18,
-    fontWeight: 600,
-    fontFamily: Fonts.semiBold,
-  },
-  logoContainer: {
-    width: "100%",
-    alignItems: "flex-start",
-    marginBottom: 15,
-    paddingTop: 10,
-  },
-  logo: {
-    width: 180,
-    height: 60,
+  closeBtn: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

@@ -1,6 +1,6 @@
 import Constants from "expo-constants";
 import { Platform } from "react-native";
-import api from "./config";
+import api, { API_URL } from "./config";
 import { registerForPushNotificationsAsync } from "./firebase";
 import { registerDeviceToken } from "./notifications";
 
@@ -31,7 +31,6 @@ function logStep(step: string, extra?: Record<string, any>) {
 export async function Login(cpf: string, password: string) {
   const cleanCpf = cpf.replace(/\D/g, "");
 
-  const API_URL = "https://yk171d97y4.execute-api.us-east-1.amazonaws.com/prd";
   const endpoint = `${API_URL}/auth/login`;
 
   logStep("1_FETCH_START", { endpoint, platform: Platform.OS, isExpoGo, appOwnership: Constants.appOwnership });

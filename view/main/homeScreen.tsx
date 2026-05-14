@@ -160,7 +160,7 @@ export default function HomeScreen() {
   }
 
   function handleCallSupport() {
-    const phoneNumber = "080008889633";
+    const phoneNumber = "08008870091";
     Linking.openURL(`tel:${phoneNumber}`);
     setIsSupportModalOpen(false);
   }
@@ -222,7 +222,7 @@ export default function HomeScreen() {
 
       <PersonalCardModal
         visible={modalPersonalCardVisible}
-        user={cardSelected}
+        titularId={user?.id ?? null}
         themeColors={themeColors}
         onClose={handleCloseModal}
       />
@@ -230,7 +230,7 @@ export default function HomeScreen() {
       <LogoutModal
         warningVisible={isSupportModalOpen}
         themeColors={themeColors}
-        text="Ligar para o Suporte?"
+        text="Ligar para Equipe de Saúde?"
         onConfirm={handleCallSupport}
         close={() => setIsSupportModalOpen(false)}
         isLoading={false}

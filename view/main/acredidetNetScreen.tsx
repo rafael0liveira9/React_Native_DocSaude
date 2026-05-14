@@ -39,6 +39,7 @@ export default function AcreditedNetScreen() {
   >([]);
   const [filteredEstablishments, setFilteredEstablishments] = useState<any>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [filtersExpanded, setFiltersExpanded] = useState<boolean>(false);
 
   // Carregar rede credenciada da API
   async function loadRedeCredenciada() {
@@ -215,8 +216,7 @@ export default function AcreditedNetScreen() {
         alignSelf: "flex-start",
         width: "100%",
         paddingHorizontal: 16,
-        paddingVertical: 10,
-        marginBottom: 4,
+        paddingVertical: 4,
         gap: 8,
       }}>
         <TouchableOpacity
@@ -262,14 +262,16 @@ export default function AcreditedNetScreen() {
           themeColors={themeColors}
           openNowText={openNowText}
           setOpenNowText={setOpenNowText}
+          expanded={filtersExpanded}
+          onToggleExpanded={() => setFiltersExpanded((v) => !v)}
         />
-        <View style={{ width: "90%", marginTop: 16, marginBottom: 10 }}>
+        <View style={{ width: "100%", paddingHorizontal: 16, marginTop: 16, marginBottom: 8 }}>
           <Text
             style={{
               fontWeight: "700",
               fontFamily: Fonts.bold,
-              fontSize: 18,
-              color: themeColors.text,
+              fontSize: 16,
+              color: themeColors.background,
             }}
           >
             Resultado da busca
@@ -297,9 +299,13 @@ export default function AcreditedNetScreen() {
                     style={{
                       marginTop: 30,
                       marginBottom: 30,
-                      fontWeight: 600,
+                      paddingHorizontal: 16,
+                      fontWeight: "600",
                       fontFamily: Fonts.semiBold,
-                      fontSize: 16,
+                      fontSize: 14,
+                      textAlign: "center",
+                      color: themeColors.background,
+                      opacity: 0.7,
                     }}
                   >
                     Desculpe, nenhum parceiro encontrado.
