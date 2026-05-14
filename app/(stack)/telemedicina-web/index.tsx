@@ -112,6 +112,20 @@ export default function TelemedicinaWebScreen() {
           ref={webRef}
           source={{ uri: url }}
           style={{ flex: 1, backgroundColor: themeColors.background }}
+          userAgent="Mozilla/5.0 (Linux; Android 13; SM-A015M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+          applicationNameForUserAgent="Chrome/120.0.0.0"
+          injectedJavaScriptBeforeContentLoaded={`
+            try {
+              Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+              window.chrome = window.chrome || { runtime: {} };
+              if (navigator.userAgent.indexOf(' wv') !== -1) {
+                Object.defineProperty(navigator, 'userAgent', {
+                  get: () => navigator.userAgent.replace(/\\s*wv\\)/, ')')
+                });
+              }
+            } catch (e) {}
+            true;
+          `}
           javaScriptEnabled
           domStorageEnabled
           sharedCookiesEnabled

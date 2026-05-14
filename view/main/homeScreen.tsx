@@ -247,7 +247,7 @@ export default function HomeScreen() {
 
       <PersonalCardModal
         visible={modalPersonalCardVisible}
-        titularId={user?.id ?? null}
+        titularId={(cardSelected as any)?.originalId ?? user?.id ?? null}
         themeColors={themeColors}
         onClose={handleCloseModal}
       />
