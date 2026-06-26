@@ -551,6 +551,59 @@ class TelemedicinaService {
     const data = response.data?.data || {};
     return { url: data.url, ssoReady: !!data.sso_ready };
   }
+
+  // Verifica se o assinante logado precisa fazer o onboarding na Teladoc
+  async getOnboardingStatus(): Promise<{ available: boolean; needsOnboarding: boolean }> {
+    try {
+      const response = await api.get("/telemedicina/onboarding/status");
+      const d = response.data?.data || {};
+      return { available: !!d.available, needsOnboarding: !!d.needs_onboarding };
+    } catch (error) {
+      console.warn("[ONBOARDING] Falha no status, seguindo sem onboarding:", error);
+      // Em caso de falha, não bloqueia o fluxo (assume que não precisa)
+      return { available: true, needsOnboarding: false };
+    }
+  }
+
+  // Termo de uso ativo da company (para exibir antes do aceite)
+  async getOnboardingTerms(): Promise<{
+    term_version?: string;
+    term_text?: string;
+    term_language?: string;
+  }> {
+    try {
+      const response = await api.get("/telemedicina/onboarding/terms");
+      return response.data?.data || {};
+    } catch (error) {
+      console.warn("[ONBOARDING] Falha ao buscar termo:", error);
+      return {};
+    }
+  }
+
+  // Conclui o onboarding: cria o patient na Teladoc, define a senha e
+  // sincroniza com a senha local do assinante.
+  async submitOnboarding(params: {
+    password: string;
+    passwordConfirmation: string;
+    termsAccepted: boolean;
+    termVersion?: string;
+  }): Promise<{ success: boolean; message?: string }> {
+    try {
+      const response = await api.post("/telemedicina/onboarding", {
+        password: params.password,
+        password_confirmation: params.passwordConfirmation,
+        terms_accepted: params.termsAccepted,
+        term_version: params.termVersion,
+      });
+      return { success: !!response.data?.success };
+    } catch (error: any) {
+      return {
+        success: false,
+        message:
+          error?.response?.data?.message || "Não foi possível concluir o cadastro",
+      };
+    }
+  }
 }
 
 export default new TelemedicinaService();

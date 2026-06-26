@@ -99,6 +99,16 @@ export default function TelemedicinaWebScreen() {
           );
         }
 
+        // Primeiro acesso: se o assinante ainda não fez o onboarding na Teladoc
+        // (não tem 'patient'), o SSO cai na tela de login. Redireciona para o
+        // onboarding (criar senha + aceitar termos) antes de gerar o SSO.
+        const onboarding = await telemedicinaService.getOnboardingStatus();
+        if (onboarding.needsOnboarding) {
+          console.log("[TELEMEDICINA_WEB] Onboarding necessário, redirecionando");
+          router.replace("/(stack)/telemedicina-onboarding" as any);
+          return;
+        }
+
         const { url: ssoUrl } = await telemedicinaService.getSsoUrl(idNum);
         console.log("[TELEMEDICINA_WEB] URL recebida:", ssoUrl);
         setUrl(ssoUrl);
