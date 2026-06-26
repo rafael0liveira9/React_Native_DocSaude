@@ -7,7 +7,10 @@ import * as SecureStore from "expo-secure-store";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   BackHandler,
+  PermissionsAndroid,
+  Platform,
   Pressable,
   SafeAreaView,
   StatusBar,
@@ -38,6 +41,40 @@ export default function TelemedicinaWebScreen() {
   useEffect(() => {
     const sub = BackHandler.addEventListener("hardwareBackPress", handleBack);
     return () => sub.remove();
+  }, []);
+
+  // Solicita permissões nativas de câmera e microfone (necessárias para a
+  // videochamada da Teladoc rodar dentro do WebView). Não bloqueia o portal:
+  // o usuário pode navegar normalmente; a permissão precisa estar concedida
+  // antes de iniciar a consulta. No Android, o WebView só consegue conceder o
+  // getUserMedia da página se o app tiver a permissão nativa correspondente.
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+    PermissionsAndroid.requestMultiple([
+      PermissionsAndroid.PERMISSIONS.CAMERA,
+      PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+    ])
+      .then((results) => {
+        const cam =
+          results[PermissionsAndroid.PERMISSIONS.CAMERA] ===
+          PermissionsAndroid.RESULTS.GRANTED;
+        const mic =
+          results[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] ===
+          PermissionsAndroid.RESULTS.GRANTED;
+        console.log("[TELEMEDICINA_WEB] Permissões:", {
+          camera: cam ? "GRANTED" : "DENIED",
+          audio: mic ? "GRANTED" : "DENIED",
+        });
+        if (!cam || !mic) {
+          Alert.alert(
+            "Permissão necessária",
+            "Câmera e microfone são necessários para a videochamada. Habilite nas configurações do app caso precise usar a teleconsulta."
+          );
+        }
+      })
+      .catch((err) => {
+        console.error("[TELEMEDICINA_WEB] Erro ao solicitar permissões:", err);
+      });
   }, []);
 
   useEffect(() => {
@@ -137,6 +174,8 @@ export default function TelemedicinaWebScreen() {
           setSupportMultipleWindows={false}
           allowsInlineMediaPlayback
           mediaPlaybackRequiresUserAction={false}
+          mediaCapturePermissionGrantType="grant"
+          androidLayerType="hardware"
           originWhitelist={["*"]}
           startInLoadingState
           injectedJavaScript={`

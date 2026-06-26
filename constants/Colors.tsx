@@ -4,6 +4,8 @@ const moreColors = {
   primaryContrast: "#6F1D1DFF",
   primaryOpacity: "#FE9393DA",
   orange: "#FFAE00FF",
+  cardSurface: "#1A2747",
+  cardBorder: "#2E3A5C",
   danger: "#B02020FF",
   warning: "#FFD700",
   default: "#ECEDEE",

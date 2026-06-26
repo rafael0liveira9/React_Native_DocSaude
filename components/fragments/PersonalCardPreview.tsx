@@ -50,7 +50,6 @@ export default function PersonalCardCarousel({
   const renderCard = ({ item }: { item: any }) => {
     const isPJ = item?.type === "PJ" || !!item?.companyName;
     const planLabel = isPJ ? item.companyName : item.typeName;
-    const validadeLabel = isPJ ? "sob consulta" : formatDate(item.validAt);
 
     return (
       <View
@@ -80,7 +79,7 @@ export default function PersonalCardCarousel({
                 style={[styles.cardPlan, { color: themeColors.background }]}
                 numberOfLines={1}
               >
-                Plano: <Text style={{ fontWeight: "700" }}>{planLabel}</Text>
+                Benefício: <Text style={{ fontWeight: "700" }}>{planLabel}</Text>
               </Text>
             ) : null}
           </View>
@@ -96,11 +95,11 @@ export default function PersonalCardCarousel({
             </Text>
           </View>
           <View style={styles.cardRowItem}>
-            <Text style={styles.cardLabel}>Validade</Text>
+            <Text style={styles.cardLabel}>Data de nascimento</Text>
             <Text
               style={[styles.cardValue, { color: themeColors.background }]}
             >
-              {validadeLabel}
+              {formatDate(item.birthDate)}
             </Text>
           </View>
         </View>

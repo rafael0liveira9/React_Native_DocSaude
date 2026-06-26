@@ -26,7 +26,11 @@ export default function MenuItensCard({ menu, onCustomAction }: any) {
           <TouchableOpacity
             style={[
               styles.menuCardItem,
-              { backgroundColor: themeColors.backgroundSecondary },
+              {
+                backgroundColor: themeColors.cardSurface,
+                borderWidth: 1,
+                borderColor: themeColors.cardBorder,
+              },
             ]}
             key={y}
             activeOpacity={0.7}
@@ -42,11 +46,11 @@ export default function MenuItensCard({ menu, onCustomAction }: any) {
                 <Text style={badgeStyles.badgeText}>{e.badge}</Text>
               </View>
             ) : null}
-            <IconComponent width={32} height={32} />
+            <IconComponent width={32} height={32} color={themeColors.text} />
             <Text
               style={[
                 styles.menuCardItemText,
-                { color: themeColors.background },
+                { color: themeColors.text },
               ]}
               numberOfLines={2}
             >

@@ -23,6 +23,16 @@ import {
   StatusBar,
 } from "react-native";
 
+// Limpa o nome da cidade: remove sufixo "-UF" (formato legado) e " UF" no fim
+// (ex.: "Curitiba PR" -> "Curitiba", "Curitiba-PR" -> "Curitiba").
+function limparCidade(cidade: string): string {
+  if (!cidade) return "";
+  return cidade
+    .split("-")[0]
+    .replace(/\s+[A-Za-z]{2}$/, "")
+    .trim();
+}
+
 export default function AcreditedNetScreen() {
   const router = useRouter();
   const themeColors = Colors["dark"];
@@ -120,9 +130,8 @@ export default function AcreditedNetScreen() {
         const todasCidades: string[] = [];
         filtros.estados.forEach((estado) => {
           estado.cidades.forEach((cidade) => {
-            // Remove sufixo "-UF" das cidades
-            const cidadeLimpa = cidade.split("-")[0].trim();
-            if (!todasCidades.includes(cidadeLimpa)) {
+            const cidadeLimpa = limparCidade(cidade);
+            if (cidadeLimpa && !todasCidades.includes(cidadeLimpa)) {
               todasCidades.push(cidadeLimpa);
             }
           });
@@ -144,8 +153,8 @@ export default function AcreditedNetScreen() {
       const todasCidades: string[] = [];
       estadosData.forEach((estado) => {
         estado.cidades.forEach((cidade) => {
-          const cidadeLimpa = cidade.split("-")[0].trim();
-          if (!todasCidades.includes(cidadeLimpa)) {
+          const cidadeLimpa = limparCidade(cidade);
+          if (cidadeLimpa && !todasCidades.includes(cidadeLimpa)) {
             todasCidades.push(cidadeLimpa);
           }
         });
@@ -156,8 +165,8 @@ export default function AcreditedNetScreen() {
       // Filtra apenas cidades da UF selecionada
       const estadoSelecionado = estadosData.find((e) => e.uf === uf);
       if (estadoSelecionado) {
-        const cidadesUF = estadoSelecionado.cidades.map((c) =>
-          c.split("-")[0].trim()
+        const cidadesUF = Array.from(
+          new Set(estadoSelecionado.cidades.map(limparCidade).filter(Boolean))
         );
         setCities(cidadesUF.sort());
         console.log("[FILTROS] Cidades da UF", uf, ":", cidadesUF.length);

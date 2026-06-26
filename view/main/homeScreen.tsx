@@ -1,5 +1,6 @@
 import { GetMyData } from "@/api/auth";
 import { registerForPushNotificationsAsync } from "@/api/firebase";
+import { getManualUrl } from "@/api/manual";
 import { registerDeviceToken } from "@/api/notifications";
 import telemedicinaService from "@/api/telemedicina";
 import { LogoutModal } from "@/components/fragments/modalLogout";
@@ -173,7 +174,7 @@ export default function HomeScreen() {
     const whatsNumber = "5508000024002";
     const userName = user?.name || "Cliente";
     const companyOrPlan = user?.companyName || user?.typeName || "assinante";
-    const message = `Olá sou ${userName} assinante TotalDoc ${companyOrPlan}`;
+    const message = `Olá sou ${userName} assinante ${companyOrPlan}`;
     const url = `https://wa.me/${whatsNumber}?text=${encodeURIComponent(
       message
     )}`;
@@ -204,9 +205,8 @@ export default function HomeScreen() {
 
   async function handleOpenManual() {
     try {
-      await WebBrowser.openBrowserAsync(
-        "https://totaldocspublicafiles.s3.us-east-1.amazonaws.com/manualassinante.pdf"
-      );
+      const manualUrl = await getManualUrl();
+      await WebBrowser.openBrowserAsync(manualUrl);
     } catch (error) {
       console.error("Erro ao abrir manual:", error);
     }

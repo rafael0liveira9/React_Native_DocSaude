@@ -43,7 +43,7 @@ function AccreditedItem({ item, themeColors }: any) {
             { backgroundColor: themeColors.tint + "22" },
           ]}
         >
-          <Ionicons name="medkit" size={22} color={themeColors.tint} />
+          <Ionicons name="medkit" size={18} color={themeColors.tint} />
         </View>
         <View style={styles.info}>
           <Text
@@ -52,12 +52,20 @@ function AccreditedItem({ item, themeColors }: any) {
           >
             {item.name}
           </Text>
-          {addressLine ? (
+          {item.speciality ? (
+            <Text
+              style={[styles.speciality, { color: themeColors.tint }]}
+              numberOfLines={1}
+            >
+              {item.speciality}
+            </Text>
+          ) : null}
+          {locationLine ? (
             <Text
               style={[styles.address, { color: themeColors.background }]}
               numberOfLines={1}
             >
-              {addressLine}
+              {locationLine}
             </Text>
           ) : null}
         </View>
@@ -202,7 +210,7 @@ export default function AcredidetList({
       keyExtractor={(item) => item.id.toString()}
       ItemSeparatorComponent={() => (
         <View
-          style={{ height: 1, backgroundColor: "#EFEFEF", marginLeft: 70 }}
+          style={{ height: 1, backgroundColor: "#EFEFEF", marginLeft: 60 }}
         />
       )}
       renderItem={({ item }) => (
@@ -217,13 +225,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
+    paddingVertical: 9,
+    gap: 10,
   },
   iconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -231,20 +239,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   name: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: "700",
     fontFamily: Fonts.bold,
-    marginBottom: 2,
+    marginBottom: 1,
+  },
+  speciality: {
+    fontSize: 11,
+    fontFamily: Fonts.semiBold,
+    fontWeight: "600",
+    marginBottom: 1,
   },
   address: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: Fonts.regular,
-    opacity: 0.7,
+    opacity: 0.6,
   },
   details: {
     paddingHorizontal: 16,
     paddingBottom: 14,
-    paddingLeft: 70,
+    paddingLeft: 60,
     gap: 8,
   },
   detailRow: {
