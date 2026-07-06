@@ -62,7 +62,9 @@ async function readCached(id: number | string): Promise<string | null> {
 
 async function fetchAndCache(id: number | string): Promise<string | null> {
   try {
-    const url = `${API_URL}/assinantes/${id}/carteirinha`;
+    // ?titular=1: renderiza somente a carteirinha desta pessoa (sem dependentes).
+    // Cada card da home (titular ou dependente) já abre com o id da própria pessoa.
+    const url = `${API_URL}/assinantes/${id}/carteirinha?titular=1`;
     console.log("[CARTEIRINHA] fetch:", url);
     const res = await fetch(url);
     console.log("[CARTEIRINHA] status:", res.status);
@@ -150,7 +152,7 @@ export default function PersonalCardModal({
             <WebView
               originWhitelist={["*"]}
               source={{
-                uri: `${API_URL}/assinantes/${titularId}/carteirinha`,
+                uri: `${API_URL}/assinantes/${titularId}/carteirinha?titular=1`,
               }}
               style={styles.webView}
               javaScriptEnabled
