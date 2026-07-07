@@ -1,6 +1,9 @@
 import * as SecureStore from 'expo-secure-store';
 
 // URL da API (centralizada — importar daqui em todos os arquivos)
+// PROD: https://yk171d97y4.execute-api.us-east-1.amazonaws.com/prd
+// DEV:  https://vpaa97q6g8.execute-api.us-east-1.amazonaws.com/dev
+// >>> Apontando para PROD (banco de produção + Teladoc de produção).
 export const API_URL = 'https://yk171d97y4.execute-api.us-east-1.amazonaws.com/prd';
 
 /**
