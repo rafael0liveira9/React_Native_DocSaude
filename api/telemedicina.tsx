@@ -546,18 +546,44 @@ class TelemedicinaService {
     }
   }
 
-  async getSsoUrl(assinanteId: number): Promise<{ url: string; ssoReady: boolean }> {
+  // O portal de homologação fica atrás de HTTP Basic Auth do nginx. Quando o
+  // backend está apontando para lá, ele devolve `basic_auth` junto da URL para o
+  // WebView autenticar. Em produção o portal é aberto e o campo não vem.
+  async getSsoUrl(assinanteId: number): Promise<{
+    url: string;
+    ssoReady: boolean;
+    basicAuth?: { username: string; password: string } | null;
+  }> {
     const response = await api.get(`/telemedicina/sso-url?assinante_id=${assinanteId}`);
     const data = response.data?.data || {};
-    return { url: data.url, ssoReady: !!data.sso_ready };
+    const ba = data.basic_auth;
+    return {
+      url: data.url,
+      ssoReady: !!data.sso_ready,
+      basicAuth: ba?.username && ba?.password
+        ? { username: ba.username, password: ba.password }
+        : null,
+    };
   }
 
   // Verifica se o assinante logado precisa fazer o onboarding na Teladoc
-  async getOnboardingStatus(): Promise<{ available: boolean; needsOnboarding: boolean }> {
+  async getOnboardingStatus(): Promise<{
+    available: boolean;
+    needsOnboarding: boolean;
+    maskedPhone?: string | null;
+    maskedEmail?: string | null;
+    channels?: { sms: boolean; email: boolean };
+  }> {
     try {
       const response = await api.get("/telemedicina/onboarding/status");
       const d = response.data?.data || {};
-      return { available: !!d.available, needsOnboarding: !!d.needs_onboarding };
+      return {
+        available: !!d.available,
+        needsOnboarding: !!d.needs_onboarding,
+        maskedPhone: d.masked_phone ?? null,
+        maskedEmail: d.masked_email ?? null,
+        channels: d.channels || { sms: false, email: false },
+      };
     } catch (error) {
       console.warn("[ONBOARDING] Falha no status, seguindo sem onboarding:", error);
       // Em caso de falha, não bloqueia o fluxo (assume que não precisa)
@@ -587,6 +613,7 @@ class TelemedicinaService {
     passwordConfirmation: string;
     termsAccepted: boolean;
     termVersion?: string;
+    notificationChannel?: "sms" | "email";
   }): Promise<{ success: boolean; message?: string }> {
     try {
       const response = await api.post("/telemedicina/onboarding", {
@@ -594,6 +621,7 @@ class TelemedicinaService {
         password_confirmation: params.passwordConfirmation,
         terms_accepted: params.termsAccepted,
         term_version: params.termVersion,
+        notification_channel: params.notificationChannel,
       });
       return { success: !!response.data?.success };
     } catch (error: any) {

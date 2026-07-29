@@ -26,6 +26,10 @@ export default function TelemedicinaWebScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [url, setUrl] = useState<string | null>(null);
+  // Credenciais de HTTP Basic Auth do portal (só existem em homologação).
+  const [basicAuth, setBasicAuth] = useState<
+    { username: string; password: string } | null
+  >(null);
   const webRef = useRef<WebView>(null);
   const canGoBackRef = useRef(false);
 
@@ -109,8 +113,13 @@ export default function TelemedicinaWebScreen() {
           return;
         }
 
-        const { url: ssoUrl } = await telemedicinaService.getSsoUrl(idNum);
+        const { url: ssoUrl, basicAuth: portalAuth } =
+          await telemedicinaService.getSsoUrl(idNum);
         console.log("[TELEMEDICINA_WEB] URL recebida:", ssoUrl);
+        if (portalAuth) {
+          console.log("[TELEMEDICINA_WEB] Portal exige Basic Auth (homologação)");
+          setBasicAuth(portalAuth);
+        }
         setUrl(ssoUrl);
       } catch (err: any) {
         console.error("[TELEMEDICINA_WEB] Erro ao obter URL:", err);
@@ -158,6 +167,9 @@ export default function TelemedicinaWebScreen() {
         <WebView
           ref={webRef}
           source={{ uri: url }}
+          // Só preenchido em homologação: o nginx do portalweb.homolodoc.com.br
+          // exige Basic Auth e, sem isso, a navegação morre em 401.
+          {...(basicAuth ? { basicAuthCredential: basicAuth } : {})}
           style={{ flex: 1, backgroundColor: themeColors.background }}
           userAgent="Mozilla/5.0 (Linux; Android 13; SM-A015M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
           applicationNameForUserAgent="Chrome/120.0.0.0"
@@ -227,6 +239,14 @@ export default function TelemedicinaWebScreen() {
           }}
           onHttpError={({ nativeEvent }) => {
             console.error("[TELEMEDICINA_WEB] HTTP erro:", nativeEvent.statusCode, nativeEvent.url);
+            // 401 aqui NÃO significa SSO recusado: o portal de homologação fica
+            // atrás de Basic Auth do nginx e barra antes de olhar o redirect_token.
+            if (nativeEvent.statusCode === 401) {
+              console.error(
+                "[TELEMEDICINA_WEB] 401 - portal barrou o acesso. Basic Auth aplicado:",
+                basicAuth ? "SIM" : "NÃO"
+              );
+            }
           }}
           renderLoading={() => (
             <View style={styles.center}>
