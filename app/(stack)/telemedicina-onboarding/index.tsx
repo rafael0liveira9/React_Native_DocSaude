@@ -153,6 +153,10 @@ export default function TelemedicinaOnboardingScreen() {
               value={password}
               onChangeText={setPassword}
               autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="off"
+              spellCheck={false}
+              textContentType="newPassword"
             />
             <Pressable onPress={() => setShowPass((v) => !v)} hitSlop={8}>
               <Ionicons
@@ -204,8 +208,30 @@ export default function TelemedicinaOnboardingScreen() {
               value={confirm}
               onChangeText={setConfirm}
               autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="off"
+              spellCheck={false}
+              textContentType="newPassword"
             />
           </View>
+
+          {confirm.length > 0 && (
+            <View style={[styles.pwRuleRow, { marginBottom: 8 }]}>
+              <Ionicons
+                name={password === confirm ? "checkmark-circle" : "close-circle"}
+                size={15}
+                color={password === confirm ? "#2ecc71" : "#e74c3c"}
+              />
+              <Text
+                style={[
+                  styles.pwRuleText,
+                  { color: password === confirm ? themeColors.text : "#e74c3c" },
+                ]}
+              >
+                {password === confirm ? "As senhas conferem" : "As senhas não conferem"}
+              </Text>
+            </View>
+          )}
 
           {(channels.sms || channels.email) && (
             <>
