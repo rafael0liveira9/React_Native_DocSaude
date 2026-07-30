@@ -13,6 +13,12 @@
     },
     "production": {
       "autoIncrement": true
+    },
+    "production-dev": {
+      "extends": "production",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://vpaa97q6g8.execute-api.us-east-1.amazonaws.com/dev"
+      }
     }
   },
   "submit": {

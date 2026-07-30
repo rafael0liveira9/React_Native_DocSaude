@@ -1,10 +1,16 @@
 import * as SecureStore from 'expo-secure-store';
 
 // URL da API (centralizada — importar daqui em todos os arquivos)
-// PROD: https://yk171d97y4.execute-api.us-east-1.amazonaws.com/prd
-// DEV:  https://vpaa97q6g8.execute-api.us-east-1.amazonaws.com/dev
-// >>> Apontando para PROD (banco de produção + Teladoc de produção).
-export const API_URL = 'https://yk171d97y4.execute-api.us-east-1.amazonaws.com/prd';
+// PROD: https://yk171d97y4.execute-api.us-east-1.amazonaws.com/prd (banco totaldoc + Teladoc produção)
+// DEV:  https://vpaa97q6g8.execute-api.us-east-1.amazonaws.com/dev (banco dev-totaldoc + Teladoc homologação)
+//
+// O padrão é SEMPRE produção. Para apontar para homologação, use um perfil de
+// build que defina EXPO_PUBLIC_API_URL (ver perfil `production-dev` no eas.json)
+// ou exporte a variável antes de rodar o Metro. Assim trocar de ambiente para
+// testar não deixa uma URL de teste versionada esperando o próximo build.
+export const API_URL =
+  process.env.EXPO_PUBLIC_API_URL ||
+  'https://yk171d97y4.execute-api.us-east-1.amazonaws.com/prd';
 
 /**
  * Cliente HTTP baseado em fetch nativo.
