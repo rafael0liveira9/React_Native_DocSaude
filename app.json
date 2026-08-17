@@ -23,10 +23,12 @@
       "@react-native-firebase/app",
       "@react-native-firebase/messaging",
       "@react-native-firebase/crashlytics",
-      "./plugins/withModularHeaders.js"
+      "./plugins/withModularHeaders.js",
+      "./plugins/withAndroidSigning.js"
     ],
     "ios": {
       "bundleIdentifier": "com.totaldocsaude.expo.ios",
+      "buildNumber": "44",
       "googleServicesFile": "./GoogleService-Info.plist",
       "usesAppleSignIn": true,
       "supportsTablet": true,
@@ -46,6 +48,7 @@
     },
     "android": {
       "package": "com.totaldocsaude.expo",
+      "versionCode": 7,
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",

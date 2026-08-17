@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Opções de exportação do .ipa para App Store Connect / TestFlight.
+  Fica fora de ios/ porque essa pasta é regenerada pelo `expo prebuild`.
+-->
+<plist version="1.0">
+<dict>
+    <key>method</key>
+    <string>app-store-connect</string>
+
+    <key>teamID</key>
+    <string>54YRYNDX6B</string>
+
+    <!-- Assinatura automática: o Xcode busca/renova o profile de distribuição
+         (o script passa -allowProvisioningUpdates). Para assinatura manual,
+         troque para "manual" e informe provisioningProfiles abaixo. -->
+    <key>signingStyle</key>
+    <string>automatic</string>
+
+    <!-- Envia os símbolos para o Crashlytics/Organizer conseguir simbolicar. -->
+    <key>uploadSymbols</key>
+    <true/>
+
+    <key>stripSwiftSymbols</key>
+    <true/>
+
+    <!-- Assinatura manual: descomente e ajuste o nome exato do profile.
+    <key>provisioningProfiles</key>
+    <dict>
+        <key>com.totaldocsaude.expo.ios</key>
+        <string>TotalDoc Saude App Store</string>
+    </dict>
+    -->
+</dict>
+</plist>

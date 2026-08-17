@@ -18,6 +18,11 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# Credenciais de assinatura (build local — ver BUILD-LOCAL.md)
+keystore.properties
+*.keystore
+build/ios/
+
 # Metro
 .metro-health-check*
 
