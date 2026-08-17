@@ -64,9 +64,12 @@ export const styles = StyleSheet.create({
     elevation: 2,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 6,
-    paddingVertical: 10,
-    gap: 8,
+    // Espaçamento enxuto de propósito: o título mais longo ("Saúde Online -
+    // Telemedicina") ocupa 3 linhas, e o card é quadrado. Com padding/gap
+    // maiores a terceira linha não cabia e o texto saía cortado.
+    paddingHorizontal: 4,
+    paddingVertical: 8,
+    gap: 6,
   },
   menuCardItemHighlight: {},
   menuCardItemText: {

@@ -52,7 +52,14 @@ export default function MenuItensCard({ menu, onCustomAction }: any) {
                 styles.menuCardItemText,
                 { color: themeColors.text },
               ]}
-              numberOfLines={2}
+              // 3 linhas: "Saúde Online - Telemedicina" não cabia em 2 e era
+              // truncado em "Online - Tele...". Os títulos curtos continuam
+              // ocupando 2 e centralizados.
+              // adjustsFontSizeToFit só tem efeito no iOS; serve de folga para
+              // quem usa fonte ampliada nas configurações do sistema.
+              numberOfLines={3}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
             >
               {e.title}
             </Text>
