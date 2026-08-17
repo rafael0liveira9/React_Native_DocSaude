@@ -17,6 +17,22 @@ npm run build:ios:dev
 
 ## Antes do primeiro build
 
+### 0. Espaço em disco
+
+Um build de iOS gera de 10 a 20 GB de derived data. Confira antes de começar:
+
+```bash
+df -h /System/Volumes/Data
+```
+
+Com menos de ~25 GB livres o `xcodebuild` falha no meio com
+`no space left on device`. Para liberar rápido:
+
+```bash
+rm -rf ~/Library/Developer/Xcode/DerivedData/*
+pod cache clean --all
+```
+
 ### 1. Keystore do Android (obrigatório, e é o passo mais delicado)
 
 O Google identifica o app pela chave que assina o pacote. Se você assinar com uma
@@ -146,6 +162,25 @@ unzip -p android/app/build/outputs/bundle/release/app-release.aab \
   base/assets/index.android.bundle | grep -c "yk171d97y4"   # 1 = produção
 ```
 
+### Por que existe um plugin só para espaços no caminho
+
+O projeto vive em `…/Clientes/totalDoc/Aplicativo Mobile` — e o espaço em
+"Aplicativo Mobile" quebra dois build scripts do iOS, que passam o caminho sem
+aspas suficientes. O sintoma é sempre o mesmo:
+
+```
+bash: /Users/…/Clientes/totalDoc/Aplicativo: No such file or directory
+```
+
+Acontece em dois pontos: o script phase do `expo-constants` (nos Pods) e o
+"Bundle React Native code and images" (no target do app). No EAS isso nunca
+aparece porque lá o checkout fica em `/home/expo/workingdir/build`, sem espaço.
+
+`plugins/withPodScriptPhaseSpaceFix.js` corrige os dois a cada prebuild. A
+alternativa definitiva é renomear a pasta para algo sem espaço (`AplicativoMobile`),
+o que dispensaria o plugin — mas exigiria ajustar os caminhos de quem já usa o
+projeto. Enquanto a pasta tiver espaço, mantenha o plugin ativo.
+
 ### Por que a assinatura do Android é um config plugin
 
 O template do `prebuild` assina o buildType `release` com a `debug.keystore`. Como
@@ -190,6 +225,20 @@ o plugin `expo-build-properties` no `app.json`.
 **Ver o erro completo do iOS** — os scripts filtram o log do `xcodebuild`. Rode o
 comando sem o `| grep` para ver tudo, ou abra `ios/TotalDocSade.xcworkspace` no
 Xcode e arquive por lá (Product → Archive).
+
+**`no space left on device` no meio do build iOS** — veja o passo 0.
+
+---
+
+## Estado da verificação
+
+| Etapa | Situação |
+|---|---|
+| Android: prebuild + assinatura + AAB | Verificado — AAB de 82 MB assinado com keystore de teste e URL de produção confirmada dentro do bundle |
+| Android: guard sem keystore | Verificado — o build para com mensagem explícita em vez de usar a chave de debug |
+| iOS: prebuild, pods e correção dos espaços | Verificado — os dois script phases saem com o caminho protegido |
+| iOS: compilação completa em Release | **Não concluída** — faltou espaço em disco (a máquina estava com 8,5 GB livres) |
+| iOS: archive, export e upload | **Não testado** — depende do certificado Apple Distribution, que ainda não está nesta máquina |
 
 ---
 
