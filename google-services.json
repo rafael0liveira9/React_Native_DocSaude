@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:670629169971:android:576c36874d16ee4355cc46",
+        "mobilesdk_app_id": "1:670629169971:android:aef666b6d95d710755cc46",
         "android_client_info": {
-          "package_name": "com.totaldocsaude.expo"
+          "package_name": "androidapp.br.com.totaldoc"
         }
       },
       "oauth_client": [
@@ -29,6 +29,13 @@
             {
               "client_id": "670629169971-oi5cp58ch3td62q9vc2ascf413m51nps.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "670629169971-aq4h4e1859d1c5jpm2s3ks9vo1opk07p.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.totaldocsaude.expo.ios"
+              }
             }
           ]
         }

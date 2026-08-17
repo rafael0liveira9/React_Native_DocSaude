@@ -28,7 +28,7 @@
       "./plugins/withPodScriptPhaseSpaceFix.js"
     ],
     "ios": {
-      "bundleIdentifier": "com.totaldocsaude.expo.ios",
+      "bundleIdentifier": "ios.br.com.totaldoc",
       "buildNumber": "44",
       "googleServicesFile": "./GoogleService-Info.plist",
       "usesAppleSignIn": true,
@@ -48,7 +48,7 @@
       }
     },
     "android": {
-      "package": "com.totaldocsaude.expo",
+      "package": "androidapp.br.com.totaldoc",
       "versionCode": 7,
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {

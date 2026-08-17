@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>670629169971-aq4h4e1859d1c5jpm2s3ks9vo1opk07p.apps.googleusercontent.com</string>
+	<string>670629169971-gaiueonr2udklehiq00i4edllagucj61.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.670629169971-aq4h4e1859d1c5jpm2s3ks9vo1opk07p</string>
+	<string>com.googleusercontent.apps.670629169971-gaiueonr2udklehiq00i4edllagucj61</string>
 	<key>API_KEY</key>
 	<string>AIzaSyBdPFYToPAY9LGwOVubqYR7pYS5HxZS76g</string>
 	<key>GCM_SENDER_ID</key>
@@ -13,7 +13,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.totaldocsaude.expo.ios</string>
+	<string>ios.br.com.totaldoc</string>
 	<key>PROJECT_ID</key>
 	<string>doc-saude-app</string>
 	<key>STORAGE_BUCKET</key>
@@ -29,6 +29,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:670629169971:ios:1b162a9cd294e8bd55cc46</string>
+	<string>1:670629169971:ios:f2c74ad31d45b64e55cc46</string>
 </dict>
 </plist>
