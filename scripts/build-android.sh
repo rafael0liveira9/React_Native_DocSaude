@@ -23,8 +23,12 @@ case "$AMBIENTE" in
   *) echo "Ambiente inválido: $AMBIENTE (use prod ou dev)"; exit 1 ;;
 esac
 
-if [ ! -f android/keystore.properties ] && [ -z "${TOTALDOC_KEYSTORE_FILE:-}" ]; then
-  echo "ERRO: android/keystore.properties não encontrado e TOTALDOC_KEYSTORE_FILE não definido."
+# As credenciais ficam na RAIZ do projeto: o `expo prebuild --clean` mais abaixo
+# apaga a pasta android/ inteira, entao um keystore.properties lá dentro seria
+# destruído antes do Gradle lê-lo.
+if [ ! -f keystore.properties ] && [ ! -f android/keystore.properties ] && [ -z "${TOTALDOC_KEYSTORE_FILE:-}" ]; then
+  echo "ERRO: keystore.properties não encontrado na raiz do projeto e"
+  echo "      TOTALDOC_KEYSTORE_FILE não definido."
   echo "      Veja BUILD-LOCAL.md — seção 'Keystore do Android'."
   exit 1
 fi

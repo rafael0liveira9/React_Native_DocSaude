@@ -17,7 +17,13 @@ const { withAppBuildGradle } = require('@expo/config-plugins');
  */
 
 const SIGNING_CONFIG = `// >>> totaldoc:signing (injetado por plugins/withAndroidSigning.js)
-def keystorePropertiesFile = rootProject.file('keystore.properties')
+// O arquivo fica na RAIZ do projeto, nao em android/: o \`expo prebuild --clean\`
+// apaga a pasta android/ inteira e levaria as credenciais junto. Mantemos a
+// leitura de android/keystore.properties como fallback.
+def keystorePropertiesFile = rootProject.file('../keystore.properties')
+if (!keystorePropertiesFile.exists()) {
+    keystorePropertiesFile = rootProject.file('keystore.properties')
+}
 def keystoreProperties = new Properties()
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))

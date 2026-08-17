@@ -51,7 +51,8 @@ O comando é interativo e mostra, além do arquivo `.jks`, a senha do keystore, 
 alias e a senha da chave. **Guarde os quatro dados** — são eles que vão no arquivo
 de configuração abaixo.
 
-Coloque o `.jks` fora do projeto (a pasta `android/` é apagada a cada build) e
+Coloque o `.jks` fora do projeto e as credenciais na RAIZ (a pasta `android/` é
+apagada a cada build, entao um keystore.properties la dentro seria destruido) —
 crie o arquivo de credenciais:
 
 ```bash
@@ -59,11 +60,11 @@ mkdir -p ~/.totaldoc-keys
 mv ~/Downloads/*.jks ~/.totaldoc-keys/totaldoc-upload.jks
 chmod 600 ~/.totaldoc-keys/totaldoc-upload.jks
 
-cp build-config/keystore.properties.example android/keystore.properties
-# edite android/keystore.properties com o caminho e as senhas
+cp build-config/keystore.properties.example keystore.properties
+# edite keystore.properties com o caminho e as senhas
 ```
 
-`android/keystore.properties` e `*.jks` estão no `.gitignore` — nunca vão para o
+`keystore.properties` (raiz do projeto) e `*.jks` estão no `.gitignore` — nunca vão para o
 repositório. Faça um backup do `.jks` e das senhas em um cofre de senhas: perder
 essa chave significa perder a capacidade de atualizar o app na Play Store.
 
@@ -207,7 +208,7 @@ TestFlight (o app é o `ascAppId` 6754724014).
 
 ## Problemas comuns
 
-**`Keystore de release ausente`** — falta `android/keystore.properties`. É o guard
+**`Keystore de release ausente`** — falta `keystore.properties` (raiz do projeto). É o guard
 funcionando; veja o passo 1.
 
 **`No signing certificate "iOS Distribution" found`** — o certificado Apple
