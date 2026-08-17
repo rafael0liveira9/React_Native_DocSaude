@@ -30,8 +30,22 @@ export default function TelemedicinaWebScreen() {
   const [basicAuth, setBasicAuth] = useState<
     { username: string; password: string } | null
   >(null);
+  // O SSO abre em /?redirect_token=<jwt> e o portal ainda renderiza a tela de
+  // login enquanto processa o token e faz o auto-login. Sem isso o usuário vê o
+  // login piscar antes de cair no portal já logado. Mantemos o carregamento por
+  // cima da WebView até o redirecionamento terminar.
+  const [portalPronto, setPortalPronto] = useState(false);
   const webRef = useRef<WebView>(null);
   const canGoBackRef = useRef(false);
+  const timeoutPronto = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const marcarPortalPronto = () => {
+    if (timeoutPronto.current) {
+      clearTimeout(timeoutPronto.current);
+      timeoutPronto.current = null;
+    }
+    setPortalPronto(true);
+  };
 
   const handleBack = () => {
     if (canGoBackRef.current && webRef.current) {
@@ -46,6 +60,17 @@ export default function TelemedicinaWebScreen() {
     const sub = BackHandler.addEventListener("hardwareBackPress", handleBack);
     return () => sub.remove();
   }, []);
+
+  // Rede de segurança: se o portal não sinalizar o fim do redirecionamento (ex.:
+  // troca de rota que o WebView não reporta), revela mesmo assim em vez de deixar
+  // o usuário preso num spinner eterno.
+  useEffect(() => {
+    if (!url) return;
+    timeoutPronto.current = setTimeout(() => setPortalPronto(true), 12000);
+    return () => {
+      if (timeoutPronto.current) clearTimeout(timeoutPronto.current);
+    };
+  }, [url]);
 
   // Solicita permissões nativas de câmera e microfone (necessárias para a
   // videochamada da Teladoc rodar dentro do WebView). Não bloqueia o portal:
@@ -164,96 +189,119 @@ export default function TelemedicinaWebScreen() {
       )}
 
       {!loading && !error && url && (
-        <WebView
-          ref={webRef}
-          source={{ uri: url }}
-          // Só preenchido em homologação: o nginx do portalweb.homolodoc.com.br
-          // exige Basic Auth e, sem isso, a navegação morre em 401.
-          {...(basicAuth ? { basicAuthCredential: basicAuth } : {})}
-          style={{ flex: 1, backgroundColor: themeColors.background }}
-          userAgent="Mozilla/5.0 (Linux; Android 13; SM-A015M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
-          applicationNameForUserAgent="Chrome/120.0.0.0"
-          injectedJavaScriptBeforeContentLoaded={`
-            try {
-              Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-              window.chrome = window.chrome || { runtime: {} };
-              if (navigator.userAgent.indexOf(' wv') !== -1) {
-                Object.defineProperty(navigator, 'userAgent', {
-                  get: () => navigator.userAgent.replace(/\\s*wv\\)/, ')')
-                });
-              }
-            } catch (e) {}
-            true;
-          `}
-          javaScriptEnabled
-          domStorageEnabled
-          sharedCookiesEnabled
-          thirdPartyCookiesEnabled
-          incognito={false}
-          cacheEnabled
-          cacheMode="LOAD_DEFAULT"
-          mixedContentMode="always"
-          setSupportMultipleWindows={false}
-          allowsInlineMediaPlayback
-          mediaPlaybackRequiresUserAction={false}
-          mediaCapturePermissionGrantType="grant"
-          androidLayerType="hardware"
-          originWhitelist={["*"]}
-          startInLoadingState
-          injectedJavaScript={`
-            (function(){
-              var SELECTOR='.central-banner,.home-footer,.store-buttons,.v-navigation-drawer__prepend,.v-carousel';
-              var styleId='td-hide-style';
-              if(!document.getElementById(styleId)){
-                var s=document.createElement('style');
-                s.id=styleId;
-                s.textContent='html body .central-banner,html body .home-footer,html body .store-buttons,html body .v-navigation-drawer__prepend,html body .v-carousel{display:none !important;visibility:hidden !important;height:0 !important;overflow:hidden !important;}';
-                (document.head||document.documentElement).appendChild(s);
-              }
-              function hide(){
-                var nodes=document.querySelectorAll(SELECTOR);
-                for(var i=0;i<nodes.length;i++){
-                  nodes[i].style.setProperty('display','none','important');
+        <View style={styles.webWrap}>
+          <WebView
+            ref={webRef}
+            source={{ uri: url }}
+            // Só preenchido em homologação: o nginx do portalweb.homolodoc.com.br
+            // exige Basic Auth e, sem isso, a navegação morre em 401.
+            {...(basicAuth ? { basicAuthCredential: basicAuth } : {})}
+            style={{ flex: 1, backgroundColor: themeColors.background }}
+            userAgent="Mozilla/5.0 (Linux; Android 13; SM-A015M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+            applicationNameForUserAgent="Chrome/120.0.0.0"
+            injectedJavaScriptBeforeContentLoaded={`
+              try {
+                Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+                window.chrome = window.chrome || { runtime: {} };
+                if (navigator.userAgent.indexOf(' wv') !== -1) {
+                  Object.defineProperty(navigator, 'userAgent', {
+                    get: () => navigator.userAgent.replace(/\\s*wv\\)/, ')')
+                  });
                 }
+              } catch (e) {}
+              true;
+            `}
+            javaScriptEnabled
+            domStorageEnabled
+            sharedCookiesEnabled
+            thirdPartyCookiesEnabled
+            incognito={false}
+            cacheEnabled
+            cacheMode="LOAD_DEFAULT"
+            mixedContentMode="always"
+            setSupportMultipleWindows={false}
+            allowsInlineMediaPlayback
+            mediaPlaybackRequiresUserAction={false}
+            mediaCapturePermissionGrantType="grant"
+            androidLayerType="hardware"
+            originWhitelist={["*"]}
+            injectedJavaScript={`
+              (function(){
+                var SELECTOR='.central-banner,.home-footer,.store-buttons,.v-navigation-drawer__prepend,.v-carousel';
+                var styleId='td-hide-style';
+                if(!document.getElementById(styleId)){
+                  var s=document.createElement('style');
+                  s.id=styleId;
+                  s.textContent='html body .central-banner,html body .home-footer,html body .store-buttons,html body .v-navigation-drawer__prepend,html body .v-carousel{display:none !important;visibility:hidden !important;height:0 !important;overflow:hidden !important;}';
+                  (document.head||document.documentElement).appendChild(s);
+                }
+                function hide(){
+                  var nodes=document.querySelectorAll(SELECTOR);
+                  for(var i=0;i<nodes.length;i++){
+                    nodes[i].style.setProperty('display','none','important');
+                  }
+                }
+                hide();
+                setTimeout(hide,500);
+                setTimeout(hide,2000);
+                if(!window.__tdHideObserver){
+                  var target=document.body||document.documentElement;
+                  window.__tdHideObserver=new MutationObserver(hide);
+                  window.__tdHideObserver.observe(target,{childList:true,subtree:true});
+                }
+              })();
+              true;
+            `}
+            onMessage={(e) => {
+              console.log("[TELEMEDICINA_WEB]", e.nativeEvent.data);
+            }}
+            onNavigationStateChange={(navState) => {
+              canGoBackRef.current = navState.canGoBack;
+              console.log("[TELEMEDICINA_WEB] Nav:", navState.url, "canGoBack:", navState.canGoBack);
+              // Enquanto o redirect_token estiver na URL o portal ainda está
+              // trocando o token por sessão — é nesse intervalo que a tela de
+              // login aparece. Só revelamos quando ele sai da URL e o
+              // carregamento termina.
+              if (!navState.loading && !navState.url.includes("redirect_token")) {
+                marcarPortalPronto();
               }
-              hide();
-              setTimeout(hide,500);
-              setTimeout(hide,2000);
-              if(!window.__tdHideObserver){
-                var target=document.body||document.documentElement;
-                window.__tdHideObserver=new MutationObserver(hide);
-                window.__tdHideObserver.observe(target,{childList:true,subtree:true});
+            }}
+            onError={({ nativeEvent }) => {
+              console.error("[TELEMEDICINA_WEB] WebView erro:", nativeEvent);
+              // Falhou: revela para o usuário ver a mensagem de erro do portal em
+              // vez de continuar olhando o spinner.
+              marcarPortalPronto();
+            }}
+            onHttpError={({ nativeEvent }) => {
+              console.error("[TELEMEDICINA_WEB] HTTP erro:", nativeEvent.statusCode, nativeEvent.url);
+              // 401 aqui NÃO significa SSO recusado: o portal de homologação fica
+              // atrás de Basic Auth do nginx e barra antes de olhar o redirect_token.
+              if (nativeEvent.statusCode === 401) {
+                console.error(
+                  "[TELEMEDICINA_WEB] 401 - portal barrou o acesso. Basic Auth aplicado:",
+                  basicAuth ? "SIM" : "NÃO"
+                );
               }
-            })();
-            true;
-          `}
-          onMessage={(e) => {
-            console.log("[TELEMEDICINA_WEB]", e.nativeEvent.data);
-          }}
-          onNavigationStateChange={(navState) => {
-            canGoBackRef.current = navState.canGoBack;
-            console.log("[TELEMEDICINA_WEB] Nav:", navState.url, "canGoBack:", navState.canGoBack);
-          }}
-          onError={({ nativeEvent }) => {
-            console.error("[TELEMEDICINA_WEB] WebView erro:", nativeEvent);
-          }}
-          onHttpError={({ nativeEvent }) => {
-            console.error("[TELEMEDICINA_WEB] HTTP erro:", nativeEvent.statusCode, nativeEvent.url);
-            // 401 aqui NÃO significa SSO recusado: o portal de homologação fica
-            // atrás de Basic Auth do nginx e barra antes de olhar o redirect_token.
-            if (nativeEvent.statusCode === 401) {
-              console.error(
-                "[TELEMEDICINA_WEB] 401 - portal barrou o acesso. Basic Auth aplicado:",
-                basicAuth ? "SIM" : "NÃO"
-              );
-            }
-          }}
-          renderLoading={() => (
-            <View style={styles.center}>
+            }}
+          />
+
+          {/* Mesmo spinner da etapa anterior, por cima da WebView: some só
+              quando o SSO termina, então o login do portal nunca aparece. */}
+          {!portalPronto && (
+            <View
+              style={[
+                styles.center,
+                StyleSheet.absoluteFillObject,
+                { backgroundColor: themeColors.background },
+              ]}
+            >
               <ActivityIndicator size="large" color={themeColors.text} />
+              <Text style={[styles.msg, { color: themeColors.text }]}>
+                Conectando...
+              </Text>
             </View>
           )}
-        />
+        </View>
       )}
     </SafeAreaView>
   );
@@ -261,6 +309,7 @@ export default function TelemedicinaWebScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
+  webWrap: { flex: 1 },
   header: {
     flexDirection: "row",
     alignItems: "center",
