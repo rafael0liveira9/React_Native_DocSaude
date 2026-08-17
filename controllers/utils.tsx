@@ -36,6 +36,10 @@ export const menuItens = [
     title: "Farmácias Conveniadas",
     icon: FarmaciaIcon,
     url: "",
+    // Oculto: nunca teve destino (url vazia), então o card não fazia nada ao
+    // ser tocado. Some da home até a tela existir — basta remover esta linha
+    // e preencher a url para trazê-lo de volta.
+    hidden: true,
   },
   {
     title: "Manual do Assinante",

@@ -17,9 +17,16 @@ export default function MenuItensCard({ menu, onCustomAction }: any) {
     }
   };
 
+  const visiveis = menu.filter((e: any) => !e.hidden);
+
+  // O grid tem 3 colunas e usa space-between. Quando o total não é múltiplo de
+  // 3, a última linha espalha os cards pelas bordas e abre um vão no meio.
+  // Espaçadores invisíveis completam a linha e mantêm o alinhamento à esquerda.
+  const espacadores = (3 - (visiveis.length % 3)) % 3;
+
   return (
     <View style={[globalStyles.flexr, globalStyles.wfull, styles.menuCardMain]}>
-      {menu.map((e: any, y: number) => {
+      {visiveis.map((e: any, y: number) => {
         const IconComponent = e.icon;
 
         return (
@@ -66,6 +73,14 @@ export default function MenuItensCard({ menu, onCustomAction }: any) {
           </TouchableOpacity>
         );
       })}
+
+      {Array.from({ length: espacadores }).map((_, i) => (
+        <View
+          key={`espacador-${i}`}
+          style={[styles.menuCardItem, { opacity: 0 }]}
+          pointerEvents="none"
+        />
+      ))}
     </View>
   );
 }
