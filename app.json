@@ -37,6 +37,7 @@
         "aps-environment": "production"
       },
       "infoPlist": {
+        "CFBundleName": "TotalDoc Saúde",
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "Precisamos acessar sua câmera para realizar videochamadas com médicos.",
         "NSMicrophoneUsageDescription": "Precisamos acessar seu microfone para realizar videochamadas com médicos.",
