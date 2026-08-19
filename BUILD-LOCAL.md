@@ -6,8 +6,18 @@ enviar; o `expo prebuild` continua sendo usado — ele é local e gratuito, e é
 transforma o `app.json` nas pastas `android/` e `ios/`.
 
 ```
-npm run build:android       # AAB de produção   → Play Console
-npm run build:ios           # IPA de produção   → App Store Connect
+python3 scripts/release.py                      # sobe a versão e gera tudo
+python3 scripts/release.py --plataforma ios     # só o .ipa
+python3 scripts/release.py --sem-bump           # regera sem mexer na versão
+python3 scripts/release.py --enviar-ios         # gera e envia ao TestFlight
+```
+
+O `release.py` incrementa `version`, `buildNumber` e `versionCode` no `app.json`
+e chama os scripts de build abaixo, que continuam servindo para uso avulso:
+
+```
+npm run build:android       # AAB + APK de produção   → Play Console
+npm run build:ios           # IPA de produção         → App Store Connect
 npm run submit:ios          # compila e envia para o TestFlight
 npm run build:android:dev   # mesma coisa apontando para homologação
 npm run build:ios:dev
