@@ -28,7 +28,7 @@
     ],
     "ios": {
       "bundleIdentifier": "ios.br.com.totaldoc",
-      "buildNumber": "44",
+      "buildNumber": "45",
       "googleServicesFile": "./GoogleService-Info.plist",
       "usesAppleSignIn": true,
       "supportsTablet": true,
