@@ -163,24 +163,18 @@ unzip -p android/app/build/outputs/bundle/release/app-release.aab \
   base/assets/index.android.bundle | grep -c "yk171d97y4"   # 1 = produção
 ```
 
-### Por que existe um plugin só para espaços no caminho
+### Por que a pasta não pode ter espaço no nome
 
-O projeto vive em `…/Clientes/totalDoc/Aplicativo Mobile` — e o espaço em
-"Aplicativo Mobile" quebra dois build scripts do iOS, que passam o caminho sem
-aspas suficientes. O sintoma é sempre o mesmo:
+O projeto já morou em `Aplicativo Mobile` e o espaço quebrou **três** scripts de
+build do iOS, todos por passarem caminhos sem aspas. O pior deles falhava em
+silêncio: o `get-app-config-ios.sh` do expo-constants fazia
+`basename $PROJECT_DIR` sem aspas, a checagem interna dava errado, ele saía com
+`exit 0` e **nunca gerava o manifesto**. O build ficava verde e o app só morria
+no aparelho, com "expo-linking needs access to the expo-constants manifest".
 
-```
-bash: /Users/…/Clientes/totalDoc/Aplicativo: No such file or directory
-```
-
-Acontece em dois pontos: o script phase do `expo-constants` (nos Pods) e o
-"Bundle React Native code and images" (no target do app). No EAS isso nunca
-aparece porque lá o checkout fica em `/home/expo/workingdir/build`, sem espaço.
-
-`plugins/withPodScriptPhaseSpaceFix.js` corrige os dois a cada prebuild. A
-alternativa definitiva é renomear a pasta para algo sem espaço (`AplicativoMobile`),
-o que dispensaria o plugin — mas exigiria ajustar os caminhos de quem já usa o
-projeto. Enquanto a pasta tiver espaço, mantenha o plugin ativo.
+No EAS isso nunca aparecia porque lá o checkout fica em
+`/home/expo/workingdir/build`. A pasta foi renomeada para `AplicativoMobile` —
+mantenha assim.
 
 ### Por que a assinatura do Android é um config plugin
 

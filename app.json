@@ -24,8 +24,7 @@
       "@react-native-firebase/messaging",
       "@react-native-firebase/crashlytics",
       "./plugins/withModularHeaders.js",
-      "./plugins/withAndroidSigning.js",
-      "./plugins/withPodScriptPhaseSpaceFix.js"
+      "./plugins/withAndroidSigning.js"
     ],
     "ios": {
       "bundleIdentifier": "ios.br.com.totaldoc",
